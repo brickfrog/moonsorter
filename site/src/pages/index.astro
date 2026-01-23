@@ -22,8 +22,8 @@ const baseUrl = import.meta.env.BASE_URL;
           <img src={`${baseUrl}/anilist-logo.svg`} alt="" class="h-5 w-5" />
           <span>Connect AniList</span>
         </button>
-        <a class="btn-secondary" href="/rank">Open ranking</a>
-        <a class="btn-secondary" href="/rank?import=csv">Upload CSV</a>
+        <a class="btn-secondary" href={`${baseUrl}/rank`}>Open ranking</a>
+        <a class="btn-secondary" href={`${baseUrl}/rank?import=csv`}>Upload CSV</a>
       </div>
       <p class="text-xs text-latte-subtext0">
         Sessions autosave locally. You can stop and resume any time.
@@ -85,7 +85,7 @@ const baseUrl = import.meta.env.BASE_URL;
           <li>Preserves your scoring scale</li>
           <li>Upload only selected results</li>
         </ul>
-        <a class="btn" href="/rank?import=anilist">Continue to AniList import</a>
+        <a class="btn" href={`${baseUrl}/rank?import=anilist`}>Continue to AniList import</a>
       </article>
       <article class="card space-y-4">
         <h4 class="text-lg font-display">CSV upload</h4>
@@ -97,7 +97,7 @@ const baseUrl = import.meta.env.BASE_URL;
           <li>Compatible with JSON/CSV exports</li>
           <li>Ideal for custom datasets</li>
         </ul>
-        <a class="btn-secondary" href="/rank?import=csv">Upload CSV</a>
+        <a class="btn-secondary" href={`${baseUrl}/rank?import=csv`}>Upload CSV</a>
       </article>
     </div>
   </section>

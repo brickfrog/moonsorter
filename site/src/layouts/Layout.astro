@@ -28,7 +28,7 @@ const {
   <body data-base-url={dataBaseUrl}>
     <div class="site-container">
       <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
-        <a href="/" class="flex items-center gap-4">
+        <a href={`${dataBaseUrl}/`} class="flex items-center gap-4">
           <div class="rounded-full border-2 border-latte-surface1/70 p-1">
             <Image
               src={rabbitLogo}
@@ -44,9 +44,9 @@ const {
           </div>
         </a>
         <nav class="flex flex-wrap items-center gap-2">
-          <a class="nav-link" href="/">Overview</a>
-          <a class="nav-link" href="/rank">Ranking</a>
-          <a class="btn-secondary" href="/rank?import=csv">CSV import</a>
+          <a class="nav-link" href={`${dataBaseUrl}/`}>Overview</a>
+          <a class="nav-link" href={`${dataBaseUrl}/rank`}>Ranking</a>
+          <a class="btn-secondary" href={`${dataBaseUrl}/rank?import=csv`}>CSV import</a>
         </nav>
       </header>
       <script>
