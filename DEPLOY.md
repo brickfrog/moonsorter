@@ -11,9 +11,11 @@
    - Add redirect URI: `https://brickfrog.github.io/moonsorter/callback`
    - Copy the Client ID
 
-3. **Update Client ID:**
-   - Set the client ID in `site/src/lib/auth.ts`
-   - Or use environment variables (needs custom workflow setup)
+3. **Configure OAuth Client:**
+   - The site uses OAuth implicit flow (no server secrets needed)
+   - Copy `site/.env.example` to `site/.env`
+   - Set `PUBLIC_ANILIST_CLIENT_ID` to your client ID
+   - Keep `PUBLIC_ANILIST_RESPONSE_TYPE=token` for static deployment
 
 4. **Push to master:**
    - The workflow will auto-deploy on push to master
