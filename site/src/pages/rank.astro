@@ -4,7 +4,6 @@ import Comparison from '../components/Comparison.astro';
 import SortGroup from '../components/SortGroup.astro';
 import Rankings from '../components/Rankings.astro';
 import TierList from '../components/TierList.astro';
-import rankScript from '../scripts/rank.ts?url';
 
 const baseUrl = import.meta.env.BASE_URL;
 ---
@@ -372,5 +371,7 @@ const baseUrl = import.meta.env.BASE_URL;
   <Rankings />
   <TierList />
 
-  <script type="module" src={rankScript}></script>
+  <script>
+    import '../scripts/rank.ts';
+  </script>
 </Layout>
