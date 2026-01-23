@@ -42,6 +42,7 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
           PUBLIC_ANILIST_CLIENT_ID: ${{ secrets.PUBLIC_ANILIST_CLIENT_ID }}
+          PUBLIC_ANILIST_RESPONSE_TYPE: 'token'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
