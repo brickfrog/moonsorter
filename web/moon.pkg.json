@@ -1,0 +1,45 @@
+{
+  "is-main": true,
+  "import": [
+    {
+      "path": "username/moonsorter/src",
+      "alias": "ranker"
+    }
+  ],
+  "link": {
+    "wasm-gc": {
+      "exports": [
+        "create_ranker",
+        "add_comparison",
+        "add_ranking",
+        "clear_ranking",
+        "add_to_ranking",
+        "commit_ranking",
+        "get_next_pair_encoded",
+        "get_progress_completed",
+        "get_progress_estimated",
+        "get_rank_for",
+        "set_uncertainty_prior",
+        "set_pair_policy",
+        "set_sampling_seed",
+        "compute_uncertainty",
+        "get_uncertainty_ready",
+        "get_uncertainty_samples",
+        "get_uncertainty_top_k",
+        "get_uncertainty_width_for",
+        "get_uncertainty_median_width",
+        "get_uncertainty_p90_width",
+        "get_uncertainty_width_target",
+        "get_uncertainty_order_index",
+        "get_topk_stable_count",
+        "get_rank_ci_low",
+        "get_rank_ci_high",
+        "get_rank_mean",
+        "get_topk_confidence",
+        "compute_tiers",
+        "get_tier_for",
+        "undo_last"
+      ]
+    }
+  }
+}

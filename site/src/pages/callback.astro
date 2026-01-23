@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import callbackScript from '../scripts/callback.ts?url';
+---
+<Layout title="Connecting to AniList">
+  <section class="card">
+    <div class="pill">Connecting</div>
+    <h3 class="text-xl font-display">Syncing with AniList</h3>
+    <p class="text-sm text-latte-subtext1">
+      Finishing authorization, then redirecting you.
+    </p>
+    <p class="text-xs text-latte-subtext0" data-auth-status></p>
+  </section>
+  <script type="module" src={callbackScript}></script>
+</Layout>

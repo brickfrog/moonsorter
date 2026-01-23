@@ -1,0 +1,25 @@
+# MoonBit
+target/
+.mooncakes/
+.moonagent/
+*.coverage
+coverage.json
+uncovered.log
+AGENTS.md
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Logs
+*.log

@@ -1,0 +1,194 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "username/moonsorter/src"
+
+import(
+  "moonbitlang/core/hashset"
+  "moonbitlang/core/json"
+)
+
+// Values
+fn bradley_terry_prob(Double, Double) -> Double
+
+fn estimate_total_comparisons(Int) -> Int
+
+fn kmeans_1d(Array[Double], Int) -> Array[Int]
+
+fn log_likelihood(Array[Double], Array[Array[Int]], Array[Array[Double]]) -> Double
+
+fn mm_fit(Array[Double], Array[Array[Int]], Array[Array[Double]], max_iter? : Int, tolerance? : Double) -> Array[Double]
+
+fn newman_fit(Array[Double], Array[Array[Int]], Array[Array[Double]], max_iter? : Int, tolerance? : Double, use_map? : Bool) -> Array[Double]
+
+fn pl_fit(Int, Array[RankingEvent], Array[Double], Map[String, Int], max_iter? : Int, tolerance? : Double, use_map? : Bool) -> Array[Double]
+
+// Errors
+
+// Types and methods
+pub struct BradleyTerryRanker {
+  items : Array[String]
+  item_to_idx : Map[String, Int]
+  mut strengths : Array[Double]
+  mut comparison_matrix : Array[Array[Int]]
+  mut win_matrix : Array[Array[Double]]
+  mut iteration_count : Int
+  mut completed_comparisons : @hashset.HashSet[(String, String)]
+  history : Array[HistoryEntry]
+}
+fn BradleyTerryRanker::compute_ordinal_rankings(Self) -> Map[String, Int]
+fn BradleyTerryRanker::compute_ranks(Self) -> Map[String, Double]
+fn BradleyTerryRanker::fit(Self) -> Unit
+fn BradleyTerryRanker::from_json_string(String) -> Self?
+fn BradleyTerryRanker::from_save_state(SaveState) -> Self
+fn BradleyTerryRanker::get_most_informative_pair(Self) -> (String, String)?
+fn BradleyTerryRanker::get_progress(Self) -> (Int, Int)
+fn BradleyTerryRanker::get_strength(Self, String) -> Double?
+fn BradleyTerryRanker::get_win_probability(Self, String, String) -> Double?
+fn BradleyTerryRanker::n_items(Self) -> Int
+fn BradleyTerryRanker::new(Array[String]) -> Self
+fn BradleyTerryRanker::to_json_string(Self) -> String
+fn BradleyTerryRanker::to_save_state(Self) -> SaveState
+fn BradleyTerryRanker::total_comparisons(Self) -> Int
+fn BradleyTerryRanker::undo_last(Self) -> Bool
+fn BradleyTerryRanker::update_single_query(Self, String, String, ComparisonResult) -> Unit
+
+pub(all) enum ComparisonResult {
+  AWins
+  BWins
+  Tie
+}
+
+pub struct HistoryEntry {
+  item_a : String
+  item_b : String
+  strengths : Array[Double]
+  comparison_matrix : Array[Array[Int]]
+  win_matrix : Array[Array[Double]]
+  iteration_count : Int
+  completed_comparisons : Array[(String, String)]
+}
+impl ToJson for HistoryEntry
+impl @json.FromJson for HistoryEntry
+
+pub struct IndexedHistoryEntry {
+  strengths : Array[Double]
+  events : Array[IndexedRankingEvent]
+  iteration_count : Int
+}
+
+pub struct IndexedRanker {
+  n : Int
+  mut strengths : Array[Double]
+  mut events : Array[IndexedRankingEvent]
+  mut iteration_count : Int
+  mut uncertainty_prior : Double
+  mut pair_policy : Int
+  mut rng_state : UInt64
+  mut uncertainty_ready : Bool
+  mut uncertainty_samples : Int
+  mut uncertainty_top_k : Int
+  mut uncertainty_widths : Array[Int]
+  mut uncertainty_order : Array[Int]
+  mut uncertainty_median_width : Int
+  mut uncertainty_p90_width : Int
+  mut rank_ci_low : Array[Int]
+  mut rank_ci_high : Array[Int]
+  mut rank_mean : Array[Double]
+  mut topk_confidence : Array[Double]
+  history : Array[IndexedHistoryEntry]
+}
+fn IndexedRanker::add_ranking(Self, Array[Int]) -> Bool
+fn IndexedRanker::compute_ordinal_ranks(Self) -> Array[Int]
+fn IndexedRanker::compute_uncertainty(Self, Int, Int, Int) -> Bool
+fn IndexedRanker::get_most_informative_pair(Self) -> (Int, Int)?
+fn IndexedRanker::get_next_pair(Self, Double, Double) -> (Int, Int)?
+fn IndexedRanker::get_progress(Self) -> (Int, Int)
+fn IndexedRanker::get_random_pair(Self, Double) -> (Int, Int)?
+fn IndexedRanker::get_rank_ci_high(Self, Int) -> Int
+fn IndexedRanker::get_rank_ci_low(Self, Int) -> Int
+fn IndexedRanker::get_rank_for(Self, Int) -> Int?
+fn IndexedRanker::get_rank_mean(Self, Int) -> Double
+fn IndexedRanker::get_tiers(Self, Int) -> Array[Int]
+fn IndexedRanker::get_topk_confidence(Self, Int) -> Double
+fn IndexedRanker::get_topk_stable_count(Self, Double) -> Int
+fn IndexedRanker::get_uncertainty_median_width(Self) -> Int
+fn IndexedRanker::get_uncertainty_order_index(Self, Int) -> Int
+fn IndexedRanker::get_uncertainty_p90_width(Self) -> Int
+fn IndexedRanker::get_uncertainty_ready(Self) -> Bool
+fn IndexedRanker::get_uncertainty_samples(Self) -> Int
+fn IndexedRanker::get_uncertainty_top_k(Self) -> Int
+fn IndexedRanker::get_uncertainty_width_for(Self, Int) -> Int
+fn IndexedRanker::get_uncertainty_width_target(Self) -> Int
+fn IndexedRanker::n_items(Self) -> Int
+fn IndexedRanker::new(Int) -> Self
+fn IndexedRanker::set_pair_policy(Self, Int) -> Unit
+fn IndexedRanker::set_sampling_seed(Self, Int) -> Unit
+fn IndexedRanker::set_uncertainty_prior(Self, Double) -> Unit
+fn IndexedRanker::total_comparisons(Self) -> Int
+fn IndexedRanker::undo_last(Self) -> Bool
+fn IndexedRanker::update_single_query(Self, Int, Int, ComparisonResult) -> Bool
+
+pub struct IndexedRankingEvent {
+  items : Array[Int]
+}
+
+pub(all) struct PlHistoryEntry {
+  strengths : Array[Double]
+  events : Array[RankingEvent]
+  iteration_count : Int
+}
+
+pub struct PlackettLuceRanker {
+  items : Array[String]
+  item_to_idx : Map[String, Int]
+  mut strengths : Array[Double]
+  mut events : Array[RankingEvent]
+  mut iteration_count : Int
+  history : Array[PlHistoryEntry]
+}
+fn PlackettLuceRanker::add_ranking(Self, Array[String]) -> Bool
+fn PlackettLuceRanker::compute_ordinal_rankings(Self) -> Map[String, Int]
+fn PlackettLuceRanker::compute_ranks(Self) -> Map[String, Double]
+fn PlackettLuceRanker::fit(Self) -> Unit
+fn PlackettLuceRanker::new(Array[String]) -> Self
+fn PlackettLuceRanker::to_json_string(Self) -> String
+fn PlackettLuceRanker::total_comparisons(Self) -> Int
+fn PlackettLuceRanker::undo_last(Self) -> Bool
+fn PlackettLuceRanker::update_single_query(Self, String, String, ComparisonResult) -> Unit
+
+pub(all) struct PlackettLuceState {
+  items : Array[String]
+  strengths : Array[Double]
+  events : Array[RankingEvent]
+  iteration_count : Int
+}
+impl ToJson for PlackettLuceState
+impl @json.FromJson for PlackettLuceState
+
+pub struct RankerState {
+  items : Array[String]
+  strengths : Array[Double]
+  comparison_matrix : Array[Array[Int]]
+  win_matrix : Array[Array[Double]]
+  iteration_count : Int
+  completed_comparisons : Array[(String, String)]
+}
+impl ToJson for RankerState
+impl @json.FromJson for RankerState
+
+pub struct RankingEvent {
+  items : Array[String]
+}
+impl ToJson for RankingEvent
+impl @json.FromJson for RankingEvent
+
+pub struct SaveState {
+  state : RankerState
+  history : Array[HistoryEntry]
+}
+impl ToJson for SaveState
+impl @json.FromJson for SaveState
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,72 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "username/moonsorter/web"
+
+// Values
+fn add_comparison(Int, Int, Int) -> Bool
+
+fn add_ranking(Array[Int]) -> Bool
+
+fn add_to_ranking(Int) -> Unit
+
+fn clear_ranking() -> Unit
+
+fn commit_ranking() -> Bool
+
+fn compute_tiers(Int) -> Int
+
+fn compute_uncertainty(Int, Int, Int) -> Bool
+
+fn create_ranker(Int) -> Bool
+
+fn get_next_pair_encoded(Double, Double) -> Int
+
+fn get_progress_completed() -> Int
+
+fn get_progress_estimated() -> Int
+
+fn get_rank_ci_high(Int) -> Int
+
+fn get_rank_ci_low(Int) -> Int
+
+fn get_rank_for(Int) -> Int
+
+fn get_rank_mean(Int) -> Double
+
+fn get_tier_for(Int) -> Int
+
+fn get_topk_confidence(Int) -> Double
+
+fn get_topk_stable_count(Double) -> Int
+
+fn get_uncertainty_median_width() -> Int
+
+fn get_uncertainty_order_index(Int) -> Int
+
+fn get_uncertainty_p90_width() -> Int
+
+fn get_uncertainty_ready() -> Bool
+
+fn get_uncertainty_samples() -> Int
+
+fn get_uncertainty_top_k() -> Int
+
+fn get_uncertainty_width_for(Int) -> Int
+
+fn get_uncertainty_width_target() -> Int
+
+fn set_pair_policy(Int) -> Bool
+
+fn set_sampling_seed(Int) -> Bool
+
+fn set_uncertainty_prior(Double) -> Bool
+
+fn undo_last() -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

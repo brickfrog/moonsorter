@@ -1,0 +1,122 @@
+---
+---
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" is:inline></script>
+<div class="tier-list hidden" data-tier-list>
+  <div class="flex flex-col gap-4 mb-6">
+    <div>
+      <h4 class="text-xl font-display">Visual Tier List</h4>
+      <p class="text-sm text-latte-subtext1">Automatic clustering based on model scores</p>
+    </div>
+    <label class="max-w-xs">
+      <span class="inline-flex items-center gap-2">
+        Number of tiers
+        <span class="help-dot" title="How many tiers to group items into (3-7)">?</span>
+      </span>
+      <input id="tier-k-value" type="number" min="3" max="7" step="1" value="5" />
+    </label>
+  </div>
+
+  <div class="tier-container space-y-2">
+    <!-- Tiers will be injected here -->
+  </div>
+
+  <div class="mt-6 flex justify-center">
+    <button class="btn" type="button" data-action="download-tierlist" title="Captures tier list at current viewport width">
+      📷 Download Tier List
+    </button>
+  </div>
+
+  <template id="tier-row-template">
+    <div class="tier-row">
+      <div class="tier-label">S</div>
+      <div class="tier-items"></div>
+    </div>
+  </template>
+</div>
+
+<style is:global>
+  .tier-list {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--latte-surface1);
+  }
+
+  .tier-row {
+    display: flex;
+    min-height: 100px;
+    background: var(--latte-surface0);
+    border: 1px solid var(--latte-surface1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tier-label {
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #111;
+    flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  /* Standard Tier List Colors */
+  .tier-row:nth-child(1) .tier-label { background-color: #FFD700; } /* S - Gold */
+  .tier-row:nth-child(2) .tier-label { background-color: #ffbf7f; } /* A - Orange */
+  .tier-row:nth-child(3) .tier-label { background-color: #ffff7f; } /* B - Yellow */
+  .tier-row:nth-child(4) .tier-label { background-color: #7fff7f; } /* C - Green */
+  .tier-row:nth-child(5) .tier-label { background-color: #9CA3AF; } /* D - Gray */
+  .tier-row:nth-child(n+6) .tier-label { background-color: #6B7280; } /* F+ - Dark Gray */
+
+  .tier-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    flex-grow: 1;
+    align-content: flex-start;
+  }
+
+  .tier-item {
+    width: 60px;
+    height: 85px;
+    background: var(--latte-surface1);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .tier-item:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
+
+  .tier-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .tier-item .item-tooltip {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    font-size: 8px;
+    padding: 2px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.22s;
+    pointer-events: none;
+  }
+
+  .tier-item:hover .item-tooltip {
+    opacity: 1;
+  }
+</style>

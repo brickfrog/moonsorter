@@ -1,0 +1,57 @@
+---
+const { left = 'Item A', right = 'Item B' } = Astro.props;
+---
+<section class="card hidden" data-step="compare">
+  <div class="flex items-center gap-2 mb-3">
+    <div class="pill">Step 4: Compare</div>
+    <div class="pill kbd-hint bg-latte-sapphire/20 border-latte-sapphire/40">⌨️ Shortcuts active</div>
+    <div class="pill hidden" data-pair-strategy></div>
+  </div>
+  <h3 class="text-xl font-display">Pick the stronger title</h3>
+  <p class="text-sm text-latte-subtext1">
+    <span class="kbd-hint">Choose the winner. Use keyboard shortcuts A/B or arrows, Space for tie.</span>
+    <span class="touch-hint hidden">Tap the card for your preferred choice.</span>
+  </p>
+  <div class="compare mt-4" data-compare>
+    <button class="choice" type="button" data-choice="A">
+      <div class="tag">Choice A</div>
+      <strong class="text-base" data-choice-title="A">{left}</strong>
+      <div class="text-xs text-latte-subtext1 hidden" data-choice-meta="A"></div>
+      <div class="text-xs text-latte-subtext0 kbd-hint">Press A or Left Arrow</div>
+      <div class="text-xs text-latte-subtext0 touch-hint hidden">Tap here</div>
+    </button>
+    <button class="choice" type="button" data-choice="TIE">
+      <div class="tag">Tie</div>
+      <strong class="text-base">Equal / Skip</strong>
+      <div class="text-xs text-latte-subtext0 kbd-hint">Press Space</div>
+      <div class="text-xs text-latte-subtext0 touch-hint hidden">Tap here</div>
+    </button>
+    <button class="choice" type="button" data-choice="B">
+      <div class="tag">Choice B</div>
+      <strong class="text-base" data-choice-title="B">{right}</strong>
+      <div class="text-xs text-latte-subtext1 hidden" data-choice-meta="B"></div>
+      <div class="text-xs text-latte-subtext0 kbd-hint">Press B or Right Arrow</div>
+      <div class="text-xs text-latte-subtext0 touch-hint hidden">Tap here</div>
+    </button>
+  </div>
+  <div class="progress mt-4 space-y-2" data-progress>
+    <div class="pill" data-progress-text>0 / 0 comparisons</div>
+    <div class="progress-track">
+      <div class="progress-fill" data-progress-fill></div>
+    </div>
+    <p class="text-xs text-latte-subtext0 inline-flex items-center gap-1" data-progress-meta>
+      <span>Estimated total: 0 comparisons</span>
+      <span class="help-dot" title="Estimate based on n·log(n). Actual may vary with active learning.">?</span>
+    </p>
+  </div>
+  <details class="kbd-hint mt-4 rounded-xl border border-latte-surface1/70 bg-latte-surface0/50 p-3">
+    <summary class="cursor-pointer text-xs font-semibold uppercase tracking-wider text-latte-subtext1 hover:text-latte-text">⌨️ Keyboard Shortcuts</summary>
+    <div class="mt-2 grid gap-1 text-xs text-latte-subtext1">
+      <div class="flex justify-between"><span>Choose left</span><kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">A</kbd> or <kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">←</kbd></div>
+      <div class="flex justify-between"><span>Choose right</span><kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">B</kbd> or <kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">→</kbd></div>
+      <div class="flex justify-between"><span>Tie / Skip</span><kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">Space</kbd></div>
+      <div class="flex justify-between"><span>Undo</span><kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">U</kbd></div>
+      <div class="flex justify-between"><span>Redo</span><kbd class="rounded bg-latte-surface1 px-2 py-0.5 font-mono text-latte-text">Ctrl+Y</kbd></div>
+    </div>
+  </details>
+</section>

@@ -1,0 +1,73 @@
+---
+import { Image } from 'astro:assets';
+import '../styles/global.css';
+import rabbitLogo from '../../public/rabbit.png';
+
+const {
+  title = 'Moonsorter',
+  description = 'Pairwise ranking for AniList via MoonBit and WASM.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,750&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="site-container">
+      <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
+        <a href="/" class="flex items-center gap-4">
+          <div class="rounded-full border-2 border-latte-surface1/70 p-1">
+            <Image
+              src={rabbitLogo}
+              alt="Moonsorter rabbit logo"
+              class="h-14 w-14 rounded-full object-contain md:h-16 md:w-16"
+            />
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-latte-subtext0">
+              MoonBit + WASM ranker
+            </p>
+            <h1 class="text-3xl font-display md:text-4xl">Moonsorter</h1>
+          </div>
+        </a>
+        <nav class="flex flex-wrap items-center gap-2">
+          <a class="nav-link" href="/">Overview</a>
+          <a class="nav-link" href="/rank">Ranking</a>
+          <a class="btn-secondary" href="/rank?import=csv">CSV import</a>
+        </nav>
+      </header>
+      <script>
+        // Prevent flash when clicking nav links to current page
+        document.querySelectorAll('nav a[href]').forEach(link => {
+          link.addEventListener('click', (e) => {
+            const target = link.getAttribute('href');
+            if (target && window.location.pathname === new URL(target, window.location.href).pathname) {
+              e.preventDefault();
+            }
+          });
+        });
+      </script>
+      <main class="flex flex-col gap-16">
+        <slot />
+      </main>
+      <footer class="mt-16 border-t border-latte-surface1/60 py-6 text-xs text-latte-subtext0">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <span>Built with MoonBit + WASM.</span>
+          <span>Local-first ranking sessions.</span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

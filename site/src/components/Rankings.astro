@@ -1,0 +1,118 @@
+---
+const { title = 'Results', cta = 'Upload to AniList' } = Astro.props;
+---
+<section class="card hidden" data-step="results">
+  <div class="pill mb-3">Step 5: Results</div>
+  <h3 class="text-xl font-display">{title}</h3>
+  <p class="text-sm text-latte-subtext1">
+    Review the ordering, export locally, or push the updated scores back.
+  </p>
+  <div class="results-controls">
+    <div class="flex flex-col gap-2">
+      <p class="text-sm text-latte-subtext1">Select items to push back to AniList</p>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn-secondary" type="button" data-action="select-all">
+          Select all
+        </button>
+        <button class="btn-secondary" type="button" data-action="select-none">
+          Select none
+        </button>
+      </div>
+      <p class="text-xs text-latte-subtext0" data-selection-status></p>
+    </div>
+  </div>
+  <div class="analysis-controls">
+    <div class="grid gap-3 md:grid-cols-3">
+      <label>
+        <span class="inline-flex items-center gap-2">
+          Samples
+          <span class="help-dot" title="Number of bootstrap resamples to estimate rank uncertainty.">?</span>
+        </span>
+        <input id="analysis-samples" type="number" min="50" step="50" value="200" />
+      </label>
+      <label>
+        <span class="inline-flex items-center gap-2">
+          Top-K
+          <span class="help-dot" title="Confidence of appearing in the top K ranks.">?</span>
+        </span>
+        <input id="analysis-topk" type="number" min="1" step="1" value="10" />
+      </label>
+      <label>
+        <span class="inline-flex items-center gap-2">
+          Fit iterations
+          <span class="help-dot" title="Maximum iterations per bootstrap fit. Lower is faster, higher is more stable.">?</span>
+        </span>
+        <input id="analysis-max-iter" type="number" min="5" step="5" value="40" />
+      </label>
+    </div>
+    <div class="mt-3 flex flex-col gap-2">
+      <button class="btn-secondary" type="button" data-action="run-analysis">
+        Calculate Confidence Intervals (recommended)
+      </button>
+      <p class="text-xs text-latte-subtext1">Get rank ranges and stability metrics using bootstrap resampling</p>
+      <p class="text-xs text-latte-subtext0" data-analysis-status></p>
+    </div>
+  </div>
+  <div class="analysis-summary hidden" data-analysis-summary>
+    <div class="analysis-summary-grid">
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] text-latte-subtext0">
+          Ranking stability
+        </p>
+        <p class="text-sm text-latte-text" data-analysis-median></p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] text-latte-subtext0">
+          Top-K lock-in
+        </p>
+        <p class="text-sm text-latte-text" data-analysis-topk></p>
+      </div>
+    </div>
+    <p class="mt-3 text-sm text-latte-subtext1" data-analysis-recommendation></p>
+    <div class="analysis-actions">
+      <button class="btn-secondary" type="button" data-action="resume-comparisons">
+        Keep comparing
+      </button>
+      <span class="text-xs text-latte-subtext0">
+        Click a title below to compare it next.
+      </span>
+    </div>
+    <div class="analysis-uncertain-list" data-analysis-uncertain-list></div>
+  </div>
+  <div class="rankings mt-6 overflow-x-auto" data-rankings>
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="rank">Rank <span data-sort-indicator="rank"></span></th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="title">Title <span data-sort-indicator="title"></span></th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="originalScore">Original <span data-sort-indicator="originalScore"></span></th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="newScore">New <span data-sort-indicator="newScore"></span></th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="rankCI">Rank CI <span data-sort-indicator="rankCI"></span></th>
+          <th class="cursor-pointer hover:text-latte-sapphire" data-sort="topKConfidence">Top-K <span data-sort-indicator="topKConfidence"></span></th>
+        </tr>
+      </thead>
+      <tbody data-rankings-body></tbody>
+    </table>
+  </div>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <button class="btn hidden" type="button" data-action="upload">
+      <span>Push Scores to AniList</span>
+    </button>
+    <button class="btn-secondary flex-col items-start gap-0.5" type="button" data-action="download-results">
+      <span>Download Results (JSON)</span>
+      <span class="text-xs opacity-70">Rankings + scores</span>
+    </button>
+    <button class="btn-secondary flex-col items-start gap-0.5" type="button" data-action="download-csv">
+      <span>Download Spreadsheet (CSV)</span>
+      <span class="text-xs opacity-70">For Excel/Sheets</span>
+    </button>
+    <button class="btn-secondary flex-col items-start gap-0.5" type="button" data-action="download-session">
+      <span>Download Session (Resume Later)</span>
+      <span class="text-xs opacity-70">All comparisons + settings</span>
+    </button>
+    <button class="btn-secondary" type="button" data-action="restart">
+      Start Over
+    </button>
+  </div>
+</section>

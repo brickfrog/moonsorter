@@ -1,0 +1,36 @@
+---
+---
+<section class="card hidden" data-step="sort-group">
+  <div class="pill mb-3">Step 4: Group ranking</div>
+  <h3 class="text-xl font-display">Rank this mini-set</h3>
+  <p class="text-sm text-latte-subtext1">
+    Drag the titles into order. This gives the model a richer signal than a
+    single A/B click.
+  </p>
+  <ul class="sortable-list" data-sortable-list></ul>
+  <p class="mt-3 text-xs text-latte-subtext0" data-group-coverage>
+    Coverage: 0 / 0 titles touched (0 remaining)
+  </p>
+  <p class="text-xs text-latte-subtext0" data-group-estimate>
+    Baseline target: ~0 group sorts (~2x touches).
+  </p>
+  <p class="text-xs text-latte-subtext0">
+    You can stop early, but fewer group sorts make the ordering rougher. Use
+    uncertainty analysis or switch to pairwise refine for more stability.
+  </p>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <button class="btn" type="button" data-action="submit-sort">
+      Submit ranking
+    </button>
+    <button class="btn-secondary" type="button" data-action="skip-sort">
+      Skip for now
+    </button>
+    <button
+      class="btn-secondary hidden"
+      type="button"
+      data-action="switch-to-pairwise"
+    >
+      Switch to pairwise refine
+    </button>
+  </div>
+</section>
