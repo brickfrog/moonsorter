@@ -41,6 +41,7 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: 'true'
+          PUBLIC_ANILIST_CLIENT_ID: ${{ secrets.PUBLIC_ANILIST_CLIENT_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
