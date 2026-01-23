@@ -8,7 +8,8 @@ const TOKEN_KEY = 'moonsorter.anilist_token';
 function getRedirectUri(): string {
   if (REDIRECT_URI) return REDIRECT_URI;
   if (typeof window === 'undefined') return '';
-  return `${window.location.origin}/callback`;
+  const base = import.meta.env.BASE_URL || '';
+  return `${window.location.origin}${base}/callback`;
 }
 
 function storeToken(token: string): void {
