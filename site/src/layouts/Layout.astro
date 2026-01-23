@@ -6,6 +6,7 @@ import rabbitLogo from '../../public/rabbit.png';
 const {
   title = 'Moonsorter',
   description = 'Pairwise ranking for AniList via MoonBit and WASM.',
+  'data-base-url': dataBaseUrl = '',
 } = Astro.props;
 ---
 <!doctype html>
@@ -24,7 +25,7 @@ const {
       rel="stylesheet"
     />
   </head>
-  <body>
+  <body data-base-url={dataBaseUrl}>
     <div class="site-container">
       <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
         <a href="/" class="flex items-center gap-4">

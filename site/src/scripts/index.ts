@@ -19,8 +19,9 @@ consumeAuthResponse()
   .finally(() => {
     const token = getToken();
     if (token && connectButton) {
+      const baseUrl = document.body.dataset.baseUrl || '';
       connectButton.innerHTML = `
-        <img src="/anilist-logo.svg" alt="" class="h-5 w-5" />
+        <img src="${baseUrl}/anilist-logo.svg" alt="" class="h-5 w-5" />
         <span>Connected ✓</span>
       `;
       connectButton.classList.add('btn-connected');

@@ -3,8 +3,10 @@ import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import indexScript from '../scripts/index.ts?url';
 import rabbit2 from '../../public/rabbit2.png';
+
+const baseUrl = import.meta.env.BASE_URL;
 ---
-<Layout title="Moonsorter" description="Pairwise ranking for AniList, powered by MoonBit and WASM.">
+<Layout title="Moonsorter" description="Pairwise ranking for AniList, powered by MoonBit and WASM." data-base-url={baseUrl}>
   <section class="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div class="space-y-6">
       <div class="pill">Fast ranking tool</div>
@@ -18,7 +20,7 @@ import rabbit2 from '../../public/rabbit2.png';
       </p>
       <div class="flex flex-wrap gap-3">
         <button class="btn btn-anilist" type="button" data-action="connect">
-          <img src="/anilist-logo.svg" alt="" class="h-5 w-5" />
+          <img src={`${baseUrl}anilist-logo.svg`} alt="" class="h-5 w-5" />
           <span>Connect AniList</span>
         </button>
         <a class="btn-secondary" href="/rank">Open ranking</a>
