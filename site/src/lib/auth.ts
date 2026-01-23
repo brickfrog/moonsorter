@@ -21,14 +21,10 @@ export function login(): void {
   if (!CLIENT_ID) {
     throw new Error('Set PUBLIC_ANILIST_CLIENT_ID in .env');
   }
-  const redirectUri = getRedirectUri();
-  if (!redirectUri) {
-    throw new Error('Redirect URI not available.');
-  }
   const responseType = RESPONSE_TYPE === 'code' ? 'code' : 'token';
   const url =
     `https://anilist.co/api/v2/oauth/authorize?` +
-    `client_id=${CLIENT_ID}&response_type=${responseType}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    `client_id=${CLIENT_ID}&response_type=${responseType}`;
   window.location.href = url;
 }
 
