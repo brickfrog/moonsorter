@@ -27,7 +27,7 @@ Local dev works without changes - the base path is only applied in CI.
 
 ```bash
 cd site
-npm run dev
+bun run dev
 ```
 
 ## Custom Domain (Optional)
