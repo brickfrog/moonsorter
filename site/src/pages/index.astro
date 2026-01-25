@@ -8,14 +8,11 @@ const baseUrl = import.meta.env.BASE_URL;
 <Layout title="Moonsorter" description="Pairwise ranking for AniList, powered by MoonBit and WASM." data-base-url={baseUrl}>
   <section class="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div class="space-y-6">
-      <div class="pill">Fast ranking tool</div>
       <h2 class="text-4xl font-display leading-[1.05] md:text-5xl">
-        Rank your anime or manga list with fast pairwise comparisons.
+        Rank your anime list with pairwise comparisons.
       </h2>
       <p class="text-lg text-latte-subtext1">
-        Moonsorter learns from quick A/B picks, then generates scores you can
-        push back to AniList or export as JSON/CSV. Local-first, no server
-        storage.
+        Pick which item is better until you're satisfied with the order, then export or upload the results.
       </p>
       <div class="flex flex-wrap gap-3">
         <button class="btn btn-anilist" type="button" data-action="connect">
@@ -25,80 +22,38 @@ const baseUrl = import.meta.env.BASE_URL;
         <a class="btn-secondary" href={`${baseUrl}/rank`}>Open ranking</a>
         <a class="btn-secondary" href={`${baseUrl}/rank?import=csv`}>Upload CSV</a>
       </div>
-      <p class="text-xs text-latte-subtext0">
-        Sessions autosave locally. You can stop and resume any time.
-      </p>
     </div>
     <div class="card space-y-4">
-      <h3 class="text-lg font-display">Flow preview</h3>
       <div class="space-y-4">
         <div class="flex items-start gap-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">1</span>
           <div>
-            <p class="font-semibold text-latte-text">Choose a source</p>
-            <p class="text-sm text-latte-subtext1">Connect AniList or drop a CSV.</p>
+            <p class="font-semibold text-latte-text">Import</p>
+            <p class="text-sm text-latte-subtext1">Connect AniList or upload a CSV.</p>
           </div>
         </div>
         <div class="flex items-start gap-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">2</span>
           <div>
-            <p class="font-semibold text-latte-text">Filter and slice</p>
-            <p class="text-sm text-latte-subtext1">Pick top/bottom ranges or year windows.</p>
+            <p class="font-semibold text-latte-text">Filter</p>
+            <p class="text-sm text-latte-subtext1">Optionally narrow down by rank or year.</p>
           </div>
         </div>
         <div class="flex items-start gap-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">3</span>
           <div>
             <p class="font-semibold text-latte-text">Compare</p>
-            <p class="text-sm text-latte-subtext1">Answer focused A/B prompts until satisfied.</p>
+            <p class="text-sm text-latte-subtext1">Pick which item is better.</p>
           </div>
         </div>
         <div class="flex items-start gap-3">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">4</span>
           <div>
-            <p class="font-semibold text-latte-text">Publish</p>
-            <p class="text-sm text-latte-subtext1">Review the table, export, or upload scores.</p>
+            <p class="font-semibold text-latte-text">Export</p>
+            <p class="text-sm text-latte-subtext1">Upload to AniList or download as CSV/JSON.</p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section class="space-y-6">
-    <div class="space-y-2">
-      <div class="pill">Two entry points</div>
-      <h3 class="text-2xl font-display md:text-3xl">Pick the flow that fits.</h3>
-      <p class="text-latte-subtext1">
-        AniList sync gives you metadata and score formats. CSV import keeps you
-        offline and flexible.
-      </p>
-    </div>
-    <div class="grid gap-6 md:grid-cols-2">
-      <article class="card space-y-4">
-        <h4 class="text-lg font-display">AniList sync</h4>
-        <p class="text-sm text-latte-subtext1">
-          Pull your list, apply year filters, then push the updated scores back
-          when you are done.
-        </p>
-        <ul class="list-disc space-y-2 pl-4 text-sm text-latte-subtext1">
-          <li>Supports anime and manga</li>
-          <li>Preserves your scoring scale</li>
-          <li>Upload only selected results</li>
-        </ul>
-        <a class="btn" href={`${baseUrl}/rank?import=anilist`}>Continue to AniList import</a>
-      </article>
-      <article class="card space-y-4">
-        <h4 class="text-lg font-display">CSV upload</h4>
-        <p class="text-sm text-latte-subtext1">
-          Bring your own list. Include optional scores, IDs, and year columns.
-        </p>
-        <ul class="list-disc space-y-2 pl-4 text-sm text-latte-subtext1">
-          <li>Works without OAuth</li>
-          <li>Compatible with JSON/CSV exports</li>
-          <li>Ideal for custom datasets</li>
-        </ul>
-        <a class="btn-secondary" href={`${baseUrl}/rank?import=csv`}>Upload CSV</a>
-      </article>
     </div>
   </section>
 
@@ -114,57 +69,30 @@ const baseUrl = import.meta.env.BASE_URL;
           />
         </div>
         <div class="space-y-4 md:pt-1">
-          <div class="pill">How it works</div>
-          <h3 class="text-2xl font-display">How does it work?</h3>
+          <h3 class="text-2xl font-display">How it works</h3>
           <p class="text-sm text-latte-subtext1">
-            Moonsorter uses a statistical model to learn your preferences from quick A/B comparisons.
-            It figures out which items you haven't decided between yet and asks about those first,
-            so you don't waste time on obvious choices. Stop whenever the ranking looks right to you.
+            Uses a statistical model to learn your preferences from pairwise comparisons.
+            Prioritizes asking about items you're uncertain about, so you don't waste time on obvious choices.
           </p>
           <p class="text-sm text-latte-subtext1">
-            If you're rescoring an existing list, your current scores act as a starting point
-            so the model won't make wild changes from just a few comparisons.
+            If you're rescoring an existing list, your current scores are used as a starting point.
           </p>
           <details class="mt-3 text-xs">
             <summary class="cursor-pointer font-semibold text-latte-subtext0 hover:text-latte-text">Technical details</summary>
             <div class="mt-2 space-y-2 text-sm text-latte-subtext1">
               <p>
-                Moonsorter fits a <strong>Plackett-Luce preference model</strong> to your choices.
-                A/B comparisons are two-item rankings, while group ordering supplies richer ranking events.
+                Fits a <strong>Plackett-Luce preference model</strong> using the MM algorithm.
                 For rescoring, original scores seed the model as a soft prior (<strong>MAP regularization</strong>).
-                Pair selection uses active-learning policies (A-optimal or Thompson-style).
-                Uncertainty via <strong>bootstrap resampling</strong>. Tier list uses <strong>1D k-means</strong>.
-                Inspired by Gwern's Resorter and newer preference-learning research.
+                Pair selection uses active-learning policies. Uncertainty via <strong>bootstrap resampling</strong>.
+                Tier list uses <strong>1D k-means</strong>. Inspired by Gwern's Resorter.
               </p>
             </div>
           </details>
           <div class="flex flex-wrap gap-3 text-xs text-latte-subtext0">
-            <span class="uppercase tracking-[0.2em] text-latte-subtext0">Further reading</span>
             <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://gwern.net/resorter">Gwern's Resorter</a>
-            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://en.wikipedia.org/wiki/Plackett%E2%80%93Luce_model">Plackett-Luce (Wikipedia)</a>
-            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://projecteuclid.org/journals/annals-of-statistics/volume-32/issue-1/MM-algorithms-for-generalized-Bradley-Terry-models/10.1214/aos/1079120141.full">MM for Bradley-Terry (Hunter, 2004)</a>
+            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://en.wikipedia.org/wiki/Plackett%E2%80%93Luce_model">Plackett-Luce</a>
+            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://projecteuclid.org/journals/annals-of-statistics/volume-32/issue-1/MM-algorithms-for-generalized-Bradley-Terry-models/10.1214/aos/1079120141.full">MM Algorithm</a>
           </div>
-        </div>
-      </div>
-    </div>
-    <div class="card space-y-4">
-      <div class="pill">FAQ</div>
-      <div class="space-y-3 text-sm text-latte-subtext1">
-        <div>
-          <p class="font-semibold text-latte-text">But why?</p>
-          <p>I wanted an easier way to 're-sort' my rankings. For example, ordering my 'top things watched/listened to in a year' and the like. Additionally, things like reranking top items or wanting to rescale things. I made a terminal program for this but then I was too lazy to use it, WebUIs are less effort.</p>
-        </div>
-        <div>
-          <p class="font-semibold text-latte-text">Why all this math?</p>
-          <p>Designed to be simple to use but powerful if you want to dig into the settings. Most options have sensible defaults - import your list, pick which item is better, repeat until you're happy with the order, then export or upload.</p>
-        </div>
-        <div>
-          <p class="font-semibold text-latte-text">Do you store my data?</p>
-          <p>Nope. This is a statically generated site with no database. Sessions live in your browser unless you export or upload.</p>
-        </div>
-        <div>
-          <p class="font-semibold text-latte-text">How many comparisons does it usually take?</p>
-          <p>Usually far fewer than full sorting. You can stop once the table feels right.</p>
         </div>
       </div>
     </div>
