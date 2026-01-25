@@ -12,10 +12,10 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="space-y-5">
       <div class="pill">Ranking session</div>
       <h2 class="text-3xl font-display md:text-4xl">
-        Configure the session, then compare until the ordering feels right.
+        Rank your list, one pair at a time.
       </h2>
       <p class="text-latte-subtext1">
-        Designed for AniList ranking with full CSV support. Choose your source, tune filters, and let the ranker focus on the most informative comparisons. Your progress autosaves locally.
+        Import from AniList or CSV, answer "A or B?" until you're done. Progress saves automatically.
       </p>
       <div class="flex flex-wrap gap-3">
         <a class="btn" href={`${baseUrl}/`}>Back to overview</a>
@@ -226,7 +226,7 @@ const baseUrl = import.meta.env.BASE_URL;
         Back
       </button>
     </div>
-    <p class="text-xs text-latte-subtext0" data-import-status></p>
+    <p class="text-xs text-latte-subtext0 mt-3" data-import-status></p>
   </section>
 
   <section class="card hidden" data-step="mode">
