@@ -38,20 +38,19 @@ Requires [MoonBit](https://www.moonbitlang.com/) toolchain.
 # Build WASM
 moon build --target wasm-gc
 
-# Copy output to web directory
-cp target/wasm-gc/release/build/web/web.wasm web/
+# Copy output to site
+cp target/wasm-gc/release/build/src/src.wasm site/public/moonsorter.wasm
 ```
 
 ## Run
 
-Serve the `web/` directory with any static file server:
-
 ```bash
-cd web
-python -m http.server 8000
+cd site
+bun install
+bun run dev
 ```
 
-Visit `http://localhost:8000` and start comparing items.
+Visit `http://localhost:4321` and start ranking items.
 
 ## Development
 
@@ -79,11 +78,10 @@ src/
   types.mbt           # Core PL model, MM fitting
   indexed_ranker.mbt  # Main API with uncertainty quantification
   clustering.mbt      # K-means tier clustering
-web/
-  web.mbt             # WASM bindings
-  index.html          # Frontend
-cmd/main/
-  main.mbt            # WASM export definitions
+site/
+  src/                # Astro site source
+  public/
+    moonsorter.wasm   # Compiled WASM binary
 ```
 
 ## Features
