@@ -9,7 +9,7 @@ function getRedirectUri(): string {
   if (REDIRECT_URI) return REDIRECT_URI;
   if (typeof window === 'undefined') return '';
   const base = import.meta.env.BASE_URL || '';
-  return `${window.location.origin}${base}/callback`;
+  return `${window.location.origin}${base}callback`;
 }
 
 function storeToken(token: string): void {

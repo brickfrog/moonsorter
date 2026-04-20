@@ -175,7 +175,7 @@ function wrapExports(exports: RawExports): WasmExports {
 export async function loadWasm(): Promise<WasmExports> {
   if (wasm) return wasm;
   const base = import.meta.env.BASE_URL || '';
-  const response = await fetch(`${base}/moonsorter.wasm`);
+  const response = await fetch(`${base}moonsorter.wasm`);
   if (!response.ok) {
     throw new Error(`Failed to load WASM: ${response.status}`);
   }
