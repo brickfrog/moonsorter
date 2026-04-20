@@ -1,133 +1,391 @@
 ---
-import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
-import rabbit2 from '../../public/rabbit2.png';
+import Comparison from '../components/Comparison.astro';
+import SortGroup from '../components/SortGroup.astro';
+import Rankings from '../components/Rankings.astro';
+import TierList from '../components/TierList.astro';
 
 const baseUrl = import.meta.env.BASE_URL;
 ---
-<Layout title="Moonsorter" description="Pairwise ranking for AniList, powered by MoonBit and WASM." data-base-url={baseUrl}>
-  <section class="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
-    <div class="space-y-6">
-      <h2 class="text-4xl font-display leading-[1.05] md:text-5xl">
-        Rank your anime list with pairwise comparisons.
+<Layout data-base-url={baseUrl}>
+  <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
+    <div class="space-y-5">
+      <div class="pill">Ranking session</div>
+      <h2 class="text-3xl font-display md:text-4xl">
+        Rank your list, one pair at a time.
       </h2>
-      <p class="text-lg text-latte-subtext1">
-        Pick which item is better until you're satisfied with the order, then export or upload the results.
+      <p class="text-latte-subtext1">
+        Import from AniList or CSV, answer "A or B?" until you're done. Progress saves automatically.
       </p>
-      <div class="flex flex-wrap gap-3">
-        <button class="btn btn-anilist" type="button" data-action="connect">
-          <img src={`${baseUrl}/anilist-logo.svg`} alt="" class="h-5 w-5" />
-          <span>Connect AniList</span>
-        </button>
-        <a class="btn-secondary" href={`${baseUrl}/rank`}>Open ranking</a>
-        <a class="btn-secondary" href={`${baseUrl}/rank?import=csv`}>Upload CSV</a>
-      </div>
     </div>
     <div class="card space-y-4">
-      <div class="space-y-4">
-        <div class="flex items-start gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">1</span>
-          <div>
-            <p class="font-semibold text-latte-text">Import</p>
-            <p class="text-sm text-latte-subtext1">Connect AniList or upload a CSV.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">2</span>
-          <div>
-            <p class="font-semibold text-latte-text">Filter</p>
-            <p class="text-sm text-latte-subtext1">Optionally narrow down by rank or year.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">3</span>
-          <div>
-            <p class="font-semibold text-latte-text">Compare</p>
-            <p class="text-sm text-latte-subtext1">Pick which item is better.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-latte-sapphire text-sm font-bold text-white">4</span>
-          <div>
-            <p class="font-semibold text-latte-text">Export</p>
-            <p class="text-sm text-latte-subtext1">Upload to AniList or download as CSV/JSON.</p>
-          </div>
-        </div>
+      <h3 class="text-lg font-display">Session controls</h3>
+      <p class="text-sm text-latte-subtext1">
+        Keep a tab open while you compare. Resume at any time.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <button class="btn-secondary" type="button" data-action="resume">
+          Resume saved session
+        </button>
+        <button class="btn-secondary" type="button" data-action="clear">
+          Clear saved session
+        </button>
       </div>
+      <p class="text-xs text-latte-subtext0" data-session-status></p>
     </div>
   </section>
 
-  <section class="space-y-6">
-    <div class="card">
-      <div class="flex flex-col gap-6 md:flex-row md:items-start">
-        <div class="flex justify-center md:justify-start">
-          <Image
-            src={rabbit2}
-            alt="Rabbit lecturer"
-            class="h-40 w-40 rounded-full object-contain md:h-48 md:w-48"
-            loading="lazy"
-          />
+  <section class="card stepper">
+    <div class="stepper-track" role="tablist" aria-label="Ranking steps">
+      <button class="stepper-item" type="button" data-step-target="connect">
+        <span class="stepper-number">1</span>
+        <span class="stepper-label">Connect</span>
+      </button>
+      <button class="stepper-item" type="button" data-step-target="import">
+        <span class="stepper-number">2</span>
+        <span class="stepper-label">Import</span>
+      </button>
+      <button class="stepper-item" type="button" data-step-target="mode">
+        <span class="stepper-number">3</span>
+        <span class="stepper-label">Mode</span>
+      </button>
+      <button class="stepper-item" type="button" data-step-target="compare">
+        <span class="stepper-number">4</span>
+        <span class="stepper-label">Compare</span>
+      </button>
+      <button class="stepper-item" type="button" data-step-target="results">
+        <span class="stepper-number">5</span>
+        <span class="stepper-label">Results</span>
+      </button>
+    </div>
+    <p class="text-xs text-latte-subtext0" data-stepper-status></p>
+  </section>
+
+  <section class="card rank-loading" data-rank-loading>
+    <div class="pill mb-3">Preparing session</div>
+    <h3 class="text-xl font-display">Loading ranking tools...</h3>
+    <p class="text-sm text-latte-subtext1">
+      Checking saved progress and getting the session ready.
+    </p>
+    <div class="loading-bar mt-4"></div>
+  </section>
+
+  <section class="card hidden" data-step="connect">
+    <div class="pill mb-3">Step 1: Connect</div>
+    <h3 class="text-xl font-display">Connect your source</h3>
+    <p class="text-sm text-latte-subtext1 mb-4">
+      Connect to AniList to import and sync your list, or use CSV/demo data.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <button class="btn btn-anilist" type="button" data-action="connect">
+        <svg class="h-5 w-5" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="512" height="512" fill="#1e2630"/>
+          <path d="M321.92 323.27V136.6c0-10.698-5.887-16.602-16.558-16.602h-36.433c-10.672 0-16.561 5.904-16.561 16.602v88.651c0 2.497 23.996 14.089 24.623 16.541 18.282 71.61 3.972 128.92-13.359 131.6 28.337 1.405 31.455 15.064 10.348 5.731 3.229-38.209 15.828-38.134 52.049-1.406.31.317 7.427 15.282 7.87 15.282h85.545c10.672 0 16.558-5.9 16.558-16.6v-36.524c0-10.698-5.886-16.602-16.558-16.602z" fill="#02a9ff"/>
+          <path d="M170.68 120 74.999 393h74.338l16.192-47.222h80.96L262.315 393h73.968l-95.314-273zm11.776 165.28 23.183-75.629 25.393 75.629z" fill="#fefefe"/>
+        </svg>
+        <span>Connect to AniList</span>
+      </button>
+      <button class="btn-secondary" type="button" data-action="csv">
+        Use CSV upload
+      </button>
+      <button class="btn-secondary" type="button" data-action="demo">
+        Use demo list
+      </button>
+    </div>
+    <p class="text-xs text-latte-subtext0" data-connect-status></p>
+  </section>
+
+  <section class="card hidden" data-step="import">
+    <div class="pill mb-3">Step 2: Import</div>
+    <h3 class="text-xl font-display" data-import-title>Import your list</h3>
+    <p class="text-sm text-latte-subtext1 mb-4" data-import-desc>
+      Pull your AniList items or upload a CSV, then choose how much to rank now.
+    </p>
+    <form class="grid gap-4 md:grid-cols-2">
+      <!-- CSV-only: file input -->
+      <label class="col-span-full" data-import-path="csv">
+        CSV file (columns: title, score, media_id optional)
+        <input id="csv-file" type="file" accept=".csv,text/csv" />
+      </label>
+
+      <!-- AniList-only fields -->
+      <label class="col-span-full" data-import-path="anilist">
+        Media type
+        <select id="media-type">
+          <option value="ANIME">Anime</option>
+          <option value="MANGA">Manga</option>
+        </select>
+      </label>
+      <label data-import-path="anilist">
+        Import mode
+        <select id="import-mode">
+          <option value="all">All completed/current</option>
+          <option value="top">Top slice only</option>
+          <option value="bottom">Bottom slice only</option>
+          <option value="top-bottom">Top and bottom slice</option>
+        </select>
+      </label>
+      <label data-import-path="anilist">
+        Slice size (for top/bottom)
+        <input id="import-count" type="number" min="5" max="100" value="20" />
+      </label>
+      <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
+        <input id="include-unscored" type="checkbox" />
+        <span>Include unscored titles</span>
+      </label>
+      <label class="flex items-center gap-2 text-sm text-latte-subtext1">
+        <input id="use-score-prior" type="checkbox" checked />
+        <span>Use original scores as priors</span>
+      </label>
+      <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
+        <input id="preserve-range" type="checkbox" checked />
+        <span>Preserve original score range on upload</span>
+      </label>
+      <label data-import-path="anilist">
+        Score scale
+        <select id="score-format">
+          <option value="AUTO">Use AniList format (auto)</option>
+          <option value="POINT_100">100-point</option>
+          <option value="POINT_10_DECIMAL">10-point (decimal)</option>
+          <option value="POINT_10">10-point</option>
+          <option value="POINT_5">5-point</option>
+          <option value="POINT_3">3-point</option>
+        </select>
+      </label>
+
+      <!-- AniList-only: year filters -->
+      <label data-import-path="anilist">
+        Aired year (from / to)
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="filter-aired-from" type="number" min="1900" step="1" />
+          <input id="filter-aired-to" type="number" min="1900" step="1" />
         </div>
-        <div class="space-y-4 md:pt-1">
-          <h3 class="text-2xl font-display">How it works</h3>
-          <p class="text-sm text-latte-subtext1">
-            Uses a statistical model to learn your preferences from pairwise comparisons.
-            Prioritizes asking about items you're uncertain about, so you don't waste time on obvious choices.
-          </p>
-          <p class="text-sm text-latte-subtext1">
-            If you're rescoring an existing list, your current scores are used as a starting point.
-          </p>
-          <details class="mt-3 text-xs">
-            <summary class="cursor-pointer font-semibold text-latte-subtext0 hover:text-latte-text">Technical details</summary>
-            <div class="mt-2 space-y-2 text-sm text-latte-subtext1">
-              <p>
-                Fits a <strong>Plackett-Luce preference model</strong> using the MM algorithm.
-                For rescoring, original scores seed the model as a soft prior (<strong>MAP regularization</strong>).
-                Pair selection uses active-learning policies. Uncertainty via <strong>bootstrap resampling</strong>.
-                Tier list uses <strong>1D k-means</strong>. Inspired by Gwern's Resorter.
-              </p>
-            </div>
-          </details>
-          <div class="flex flex-wrap gap-3 text-xs text-latte-subtext0">
-            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://gwern.net/resorter">Gwern's Resorter</a>
-            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://en.wikipedia.org/wiki/Plackett%E2%80%93Luce_model">Plackett-Luce</a>
-            <a class="underline decoration-latte-sapphire/60 hover:text-latte-text" href="https://projecteuclid.org/journals/annals-of-statistics/volume-32/issue-1/MM-algorithms-for-generalized-Bradley-Terry-models/10.1214/aos/1079120141.full">MM Algorithm</a>
-          </div>
+      </label>
+      <label data-import-path="anilist">
+        Started year (from / to)
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="filter-started-from" type="number" min="1900" step="1" />
+          <input id="filter-started-to" type="number" min="1900" step="1" />
+        </div>
+      </label>
+      <label data-import-path="anilist">
+        Completed year (from / to)
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="filter-completed-from" type="number" min="1900" step="1" />
+          <input id="filter-completed-to" type="number" min="1900" step="1" />
+        </div>
+      </label>
+      <label data-import-path="anilist">
+        List updated year (from / to)
+        <div class="mt-2 grid grid-cols-2 gap-2">
+          <input id="filter-updated-from" type="number" min="1900" step="1" />
+          <input id="filter-updated-to" type="number" min="1900" step="1" />
+        </div>
+      </label>
+
+      <!-- Advanced options (collapsed) -->
+      <details class="col-span-full">
+        <summary class="cursor-pointer text-sm font-semibold text-latte-subtext0 hover:text-latte-text">
+          Advanced options
+        </summary>
+        <div class="mt-3 grid gap-4 md:grid-cols-2">
+          <label>
+            <span class="inline-flex items-center gap-2">
+              Exploration rate (epsilon)
+              <span class="help-dot" title="Chance to ask a random comparison instead of the most informative pair.">?</span>
+            </span>
+            <input
+              id="exploration-epsilon"
+              type="number"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.1"
+            />
+          </label>
+          <label>
+            <span class="inline-flex items-center gap-2">
+              Uncertainty prior
+              <span class="help-dot" title="Regularization for uncertainty scoring. Higher values make pair selection less sensitive to sparse data.">?</span>
+            </span>
+            <input id="uncertainty-prior" type="number" min="0.1" step="0.1" value="1" />
+          </label>
+        </div>
+      </details>
+    </form>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button class="btn" type="button" data-action="import" data-import-path="anilist">
+        Import from AniList
+      </button>
+      <button class="btn" type="button" data-action="import-csv" data-import-path="csv">
+        Import from CSV
+      </button>
+      <button class="btn-secondary" type="button" data-action="logout" data-import-path="anilist">
+        Disconnect
+      </button>
+      <button class="btn-secondary" type="button" data-action="back-to-connect">
+        Back
+      </button>
+    </div>
+    <p class="text-xs text-latte-subtext0 mt-3" data-import-status></p>
+  </section>
+
+  <section class="card hidden" data-step="mode">
+    <div class="pill mb-3">Step 3: Choose mode</div>
+    <h3 class="text-xl font-display">Choose how you want to rank</h3>
+    <p class="text-sm text-latte-subtext1 mb-4">
+      This only changes the interaction style. The underlying model stays the same.
+    </p>
+    <div class="space-y-4">
+      <div class="card-muted space-y-3">
+        <div class="pill">Rescore an existing list</div>
+        <p class="text-sm text-latte-subtext1">
+          Preserve your current ordering and nudge it where it feels off.
+        </p>
+        <div class="grid gap-3 md:grid-cols-2">
+          <button
+            class="mode-card"
+            type="button"
+            data-rank-goal="rescore"
+            data-rank-mode="pairwise"
+          >
+            <span class="font-semibold text-latte-text">Pairwise only</span>
+            <span class="text-xs text-latte-subtext0">
+              A/B comparisons with strong priors from your scores.
+            </span>
+          </button>
+          <button
+            class="mode-card"
+            type="button"
+            data-rank-goal="rescore"
+            data-rank-mode="group"
+          >
+            <span class="font-semibold text-latte-text">Group ranking only</span>
+            <span class="text-xs text-latte-subtext0">
+              Drag small batches into order; good for reshuffling.
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="card-muted space-y-3">
+        <div class="pill">Rank from scratch</div>
+        <p class="text-sm text-latte-subtext1">
+          Start fresh and build an ordering without relying on prior scores.
+        </p>
+        <label class="text-sm text-latte-subtext1">
+          Goal
+          <select id="scratch-goal">
+            <option value="full">Full ordering</option>
+            <option value="top-k">Find my top tier quickly</option>
+          </select>
+        </label>
+        <div class="grid gap-3 md:grid-cols-3">
+          <button
+            class="mode-card"
+            type="button"
+            data-rank-goal="scratch"
+            data-rank-mode="pairwise"
+          >
+            <span class="font-semibold text-latte-text">Pairwise only</span>
+            <span class="text-xs text-latte-subtext0">
+              Slow and steady A/B comparisons end-to-end.
+            </span>
+          </button>
+          <button
+            class="mode-card"
+            type="button"
+            data-rank-goal="scratch"
+            data-rank-mode="group"
+          >
+            <span class="font-semibold text-latte-text">Group ranking only</span>
+            <span class="text-xs text-latte-subtext0">
+              Faster bootstrap by ordering mini-sets.
+            </span>
+          </button>
+          <button
+            class="mode-card"
+            type="button"
+            data-rank-goal="scratch"
+            data-rank-mode="group-pairwise"
+          >
+            <span class="font-semibold text-latte-text">
+              Group → Pairwise refine
+            </span>
+            <span class="text-xs text-latte-subtext0">
+              Bootstrap with group sorts, then fine-tune with A/B.
+            </span>
+          </button>
         </div>
       </div>
     </div>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button class="btn-secondary" type="button" data-action="back-to-import">
+        Back to import
+      </button>
+    </div>
   </section>
+
+  <Comparison />
+  <SortGroup />
+
+  <section class="card hidden" data-step="compare-actions">
+    <div class="flex flex-wrap gap-3">
+      <button class="btn-secondary" type="button" data-action="undo">
+        Undo last
+      </button>
+      <button class="btn-secondary" type="button" data-action="redo" disabled>
+        Redo
+      </button>
+      <label class="flex items-center gap-2 text-sm text-latte-subtext1 mr-2">
+        <input id="opt-in-tier-list" type="checkbox" checked />
+        <span>Generate visual tier list</span>
+      </label>
+      <button class="btn-secondary" type="button" data-action="finish">
+        Finish and review
+      </button>
+    </div>
+  </section>
+
+  <!-- Early finish warning modal -->
+  <div class="modal-overlay hidden" data-early-finish-modal>
+    <div class="modal-card">
+      <h3 class="text-lg font-display mb-2">Results may be unreliable</h3>
+      <p class="text-sm text-latte-subtext1 mb-4" data-early-finish-message>
+        <!-- Message will be filled by JS -->
+      </p>
+      <div class="flex gap-3">
+        <button class="btn-secondary" type="button" data-action="cancel-finish">
+          Keep comparing
+        </button>
+        <button class="btn" type="button" data-action="confirm-finish">
+          View results anyway
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start over confirmation modal -->
+  <div class="modal-overlay hidden" data-start-over-modal>
+    <div class="modal-card">
+      <h3 class="text-lg font-display mb-2">Start over?</h3>
+      <p class="text-sm text-latte-subtext1 mb-4">
+        This will clear all comparisons and rankings. This cannot be undone.
+      </p>
+      <div class="flex gap-3">
+        <button class="btn-secondary" type="button" data-action="cancel-start-over">
+          Cancel
+        </button>
+        <button class="btn" type="button" data-action="confirm-start-over">
+          Start over
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <Rankings />
+  <TierList />
 
   <script>
-    import { consumeAuthResponse, getToken, login } from '../lib/auth';
-
-    const connectButton = document.querySelector('[data-action="connect"]');
-
-    if (connectButton) {
-      connectButton.addEventListener('click', () => {
-        try {
-          login();
-        } catch (error) {
-          console.error(error instanceof Error ? error.message : 'Missing client ID.');
-        }
-      });
-    }
-
-    consumeAuthResponse()
-      .catch((error) => {
-        console.error(error instanceof Error ? error.message : 'Authorization failed.');
-      })
-      .finally(() => {
-        const token = getToken();
-        if (token && connectButton) {
-          const baseUrl = document.body.dataset.baseUrl || '';
-          connectButton.innerHTML = `
-            <img src="${baseUrl}/anilist-logo.svg" alt="" class="h-5 w-5" />
-            <span>Connected ✓</span>
-          `;
-          connectButton.classList.add('btn-connected');
-          connectButton.setAttribute('disabled', 'true');
-        }
-      });
+    import '../app/rank.ts';
   </script>
 </Layout>

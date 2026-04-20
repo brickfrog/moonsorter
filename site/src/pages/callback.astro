@@ -21,11 +21,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
     consumeAuthResponse()
       .then((token) => {
-        if (token) {
-          window.location.replace(`${baseUrl}/rank`);
-        } else {
-          window.location.replace(`${baseUrl}/`);
-        }
+        window.location.replace(`${baseUrl}/`);
       })
       .catch((error) => {
         if (status) {

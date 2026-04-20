@@ -1,7 +1,5 @@
 ---
-import { Image } from 'astro:assets';
 import '../styles/global.css';
-import rabbitLogo from '../../public/rabbit.png';
 
 const {
   title = 'Moonsorter',
@@ -29,13 +27,7 @@ const {
     <div class="site-container">
       <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
         <a href={`${dataBaseUrl}/`} class="flex items-center gap-4">
-          <div class="rounded-full border-2 border-latte-surface1/70 p-1">
-            <Image
-              src={rabbitLogo}
-              alt="Moonsorter rabbit logo"
-              class="h-14 w-14 rounded-full object-contain md:h-16 md:w-16"
-            />
-          </div>
+          <div class="moon-mark" aria-hidden="true"></div>
           <div>
             <p class="text-xs uppercase tracking-[0.3em] text-latte-subtext0">
               MoonBit + WASM ranker
@@ -44,21 +36,9 @@ const {
           </div>
         </a>
         <nav class="flex flex-wrap items-center gap-2">
-          <a class="nav-link" href={`${dataBaseUrl}/`}>Overview</a>
-          <a class="nav-link" href={`${dataBaseUrl}/rank`}>Ranking</a>
+          <a class="nav-link" href="https://github.com/brickfrog/moonsorter" rel="noopener">GitHub</a>
         </nav>
       </header>
-      <script>
-        // Prevent flash when clicking nav links to current page
-        document.querySelectorAll('nav a[href]').forEach(link => {
-          link.addEventListener('click', (e) => {
-            const target = link.getAttribute('href');
-            if (target && window.location.pathname === new URL(target, window.location.href).pathname) {
-              e.preventDefault();
-            }
-          });
-        });
-      </script>
       <main class="flex flex-col gap-16">
         <slot />
       </main>

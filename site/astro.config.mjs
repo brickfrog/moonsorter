@@ -10,6 +10,9 @@ export default defineConfig({
   output: 'static',
   site: 'https://brickfrog.github.io',
   base,
+  redirects: {
+    [`${base}/rank`]: `${base}/`,
+  },
   integrations: [tailwind({ applyBaseStyles: false })],
   vite: {
     optimizeDeps: { exclude: ['moonsorter.wasm'] },
