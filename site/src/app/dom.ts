@@ -59,12 +59,18 @@ export const dom = {
 
   // Analysis UI
   analysisSummary: query('[data-analysis-summary]'),
+  analysisControlsCard: query('[data-analysis-controls]'),
+  uncertainCard: query('[data-uncertain-card]'),
+  analysisEyebrow: query('[data-analysis-eyebrow]'),
   analysisMedian: query('[data-analysis-median]'),
   analysisTopKSummary: query('[data-analysis-topk]'),
   analysisRecommendation: query('[data-analysis-recommendation]'),
   analysisUncertainList: query<HTMLDivElement>('[data-analysis-uncertain-list]'),
   analysisResumeButton: query<HTMLButtonElement>('[data-action="resume-comparisons"]'),
   analysisStatus: query('[data-analysis-status]'),
+  statIters: query('[data-stat-iters]'),
+  statPairs: query('[data-stat-pairs]'),
+  resultsHeadline: query('[data-results-headline]'),
 
   // Tier list
   tierList: query('[data-tier-list]'),

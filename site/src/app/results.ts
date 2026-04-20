@@ -202,17 +202,29 @@ export function renderResultsTable(payload: LocalResultsPayload) {
     }
   }
 
+  // For CI-bar scaling: find the widest CI span in the whole payload.
+  let maxCIWidth = 1;
+  for (const row of payload.rows) {
+    if (row.rankLow && row.rankHigh) {
+      const w = row.rankHigh - row.rankLow + 1;
+      if (w > maxCIWidth) maxCIWidth = w;
+    }
+  }
+
   sortedRows.forEach((row) => {
     const tr = document.createElement('tr');
     tr.dataset.index = row.index.toString();
+    let isUncertain = false;
     if (analysisReady && state.wasm && widthTarget != null) {
       const width = state.wasm.get_uncertainty_width_for(row.index);
       if (width > widthTarget) {
         tr.classList.add('is-uncertain');
+        isUncertain = true;
       }
     }
 
     const selectCell = document.createElement('td');
+    selectCell.className = 'col-check';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = state.selectedIndices.has(row.index);
@@ -227,32 +239,93 @@ export function renderResultsTable(payload: LocalResultsPayload) {
     selectCell.appendChild(checkbox);
 
     const rankCell = document.createElement('td');
-    rankCell.textContent = row.rank.toString();
+    rankCell.className = 'col-rank';
+    const rankNum = document.createElement('span');
+    rankNum.className = 'rank-num';
+    rankNum.textContent = row.rank.toString();
+    rankCell.appendChild(rankNum);
 
     const titleCell = document.createElement('td');
+    titleCell.className = 'col-title';
     titleCell.textContent = row.title;
 
     const originalCell = document.createElement('td');
+    originalCell.className = 'col-score';
     originalCell.textContent =
       row.originalScore > 0
         ? formatScore(row.originalScore, config)
-        : 'unscored';
+        : '—';
 
+    // New score + delta
     const newCell = document.createElement('td');
-    newCell.textContent =
-      row.newScore > 0 ? formatScore(row.newScore, config) : 'unscored';
+    newCell.className = 'col-score';
+    if (row.newScore > 0) {
+      const scoreSpan = document.createElement('span');
+      scoreSpan.textContent = formatScore(row.newScore, config);
+      newCell.appendChild(scoreSpan);
+      if (row.originalScore > 0) {
+        const delta = row.newScore - row.originalScore;
+        const deltaSpan = document.createElement('span');
+        deltaSpan.className =
+          'score-delta ' +
+          (delta > 0.001 ? 'is-up' : delta < -0.001 ? 'is-down' : 'is-flat');
+        const arrow = delta > 0.001 ? '▲' : delta < -0.001 ? '▼' : '·';
+        const formattedDelta = formatScore(Math.abs(delta), config);
+        const sign = delta > 0.001 ? '+' : delta < -0.001 ? '-' : '';
+        deltaSpan.textContent = ` ${arrow}${sign}${formattedDelta}`;
+        newCell.appendChild(deltaSpan);
+      }
+    } else {
+      newCell.textContent = '—';
+    }
 
+    // CI cell — range label + bar viz
     const ciCell = document.createElement('td');
-    ciCell.textContent =
-      row.rankLow && row.rankHigh
-        ? `${row.rankLow}-${row.rankHigh}`
-        : '--';
+    ciCell.className = 'col-ci';
+    if (row.rankLow && row.rankHigh) {
+      const range = document.createElement('span');
+      range.className = 'ci-range';
+      range.textContent = `[${row.rankLow} – ${row.rankHigh}]`;
+      const bar = document.createElement('span');
+      bar.className = 'ci-bar';
+      const fill = document.createElement('span');
+      fill.className = 'ci-bar-fill';
+      const widthPct = Math.max(
+        4,
+        ((row.rankHigh - row.rankLow + 1) / maxCIWidth) * 100,
+      );
+      fill.style.width = `${widthPct}%`;
+      bar.appendChild(fill);
+      ciCell.append(range, bar);
+      if (isUncertain) {
+        const mark = document.createElement('span');
+        mark.className = 'ci-uncertain-mark';
+        mark.title = 'High uncertainty';
+        mark.textContent = '▓▓';
+        ciCell.appendChild(mark);
+      }
+    } else {
+      ciCell.textContent = '—';
+    }
 
+    // Top-K cell — percentage + mini bar
     const topKCell = document.createElement('td');
-    topKCell.textContent =
-      row.topKConfidence != null
-        ? `${Math.round(row.topKConfidence * 100)}%`
-        : '--';
+    topKCell.className = 'col-topk';
+    if (row.topKConfidence != null) {
+      const pct = Math.round(row.topKConfidence * 100);
+      const label = document.createElement('span');
+      label.className = 'topk-label';
+      label.textContent = `${pct}%`;
+      const bar = document.createElement('span');
+      bar.className = 'topk-bar';
+      const fill = document.createElement('span');
+      fill.className = 'topk-bar-fill';
+      fill.style.width = `${pct}%`;
+      bar.appendChild(fill);
+      topKCell.append(label, bar);
+    } else {
+      topKCell.textContent = '—';
+    }
 
     tr.append(
       selectCell,
@@ -266,17 +339,40 @@ export function renderResultsTable(payload: LocalResultsPayload) {
     dom.rankingsBody!.appendChild(tr);
   });
   updateSelectionStatus(payload.rows.length);
+  updateResultsHeadline(payload);
+}
+
+function updateResultsHeadline(payload: LocalResultsPayload) {
+  if (!dom.resultsHeadline) return;
+  const count = payload.rows.length;
+  if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
+    dom.resultsHeadline.textContent = `${count} titles, ordered.`;
+    return;
+  }
+  const topKSize = payload.analysis.topK;
+  const topKThreshold = 0.8;
+  const topKStable = state.wasm.get_topk_stable_count(topKThreshold);
+  const topKRows = Math.min(topKSize, count);
+  const pct = topKRows > 0 ? (topKStable / topKRows) * 100 : 0;
+  const stable = pct >= 80;
+  const qualifier = stable ? 'Stable' : 'Unsettled';
+  dom.resultsHeadline.innerHTML =
+    `${count} titles, ordered. ` +
+    `<em>${qualifier}</em> at ${pct.toFixed(1)}%.`;
 }
 
 export function renderAnalysisSummary(payload: LocalResultsPayload) {
   if (!dom.analysisSummary) return;
   if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
     dom.analysisSummary.classList.add('hidden');
+    dom.uncertainCard?.classList.add('hidden');
+    dom.analysisControlsCard?.classList.remove('hidden');
     if (dom.analysisUncertainList) {
       dom.analysisUncertainList.innerHTML = '';
     }
     return;
   }
+  dom.analysisControlsCard?.classList.add('hidden');
   const medianWidth = state.wasm.get_uncertainty_median_width();
   const p90Width = state.wasm.get_uncertainty_p90_width();
   const widthTarget = state.wasm.get_uncertainty_width_target();
@@ -289,13 +385,21 @@ export function renderAnalysisSummary(payload: LocalResultsPayload) {
     medianWidth <= widthTarget && topKStable >= topKTarget && topKRows > 0;
   const groupOnly = state.rankMode === 'group' && state.rankPhase === 'group';
 
+  if (dom.analysisEyebrow) {
+    dom.analysisEyebrow.textContent = `Bootstrap · ${payload.analysis.samples} resamples`;
+  }
   if (dom.analysisMedian) {
-    dom.analysisMedian.textContent = `Typical CI width: ${medianWidth} ranks (90% <= ${p90Width})`;
+    dom.analysisMedian.innerHTML = `${medianWidth} <span class="stat-unit">ranks · p90 ${p90Width}</span>`;
   }
   if (dom.analysisTopKSummary) {
-    dom.analysisTopKSummary.textContent = `Top-${topKSize} locked: ${topKStable}/${topKRows} at >= ${Math.round(
-      topKThreshold * 100,
-    )}%`;
+    const pct = topKRows > 0 ? (topKStable / topKRows) * 100 : 0;
+    dom.analysisTopKSummary.innerHTML = `${pct.toFixed(1)}<span class="stat-unit">%</span>`;
+  }
+  if (dom.statIters) {
+    dom.statIters.innerHTML = `${payload.analysis.maxIter}<span class="stat-unit">/sample</span>`;
+  }
+  if (dom.statPairs) {
+    dom.statPairs.textContent = state.comparisons.length.toString();
   }
   if (dom.analysisRecommendation) {
     if (groupOnly) {
@@ -314,6 +418,7 @@ export function renderAnalysisSummary(payload: LocalResultsPayload) {
       dom.analysisUncertainList.textContent =
         'Group mode: continue ranking batches to tighten the uncertainty bands.';
       dom.analysisSummary.classList.remove('hidden');
+      dom.uncertainCard?.classList.remove('hidden');
       return;
     }
     const rowByIndex = new Map(payload.rows.map((row) => [row.index, row]));
@@ -369,6 +474,7 @@ export function renderAnalysisSummary(payload: LocalResultsPayload) {
     });
   }
   dom.analysisSummary.classList.remove('hidden');
+  dom.uncertainCard?.classList.remove('hidden');
 }
 
 // Forward declaration for tier list rendering
