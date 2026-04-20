@@ -15,25 +15,20 @@ const {
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
-    <link rel="icon" type="image/png" href={`${dataBaseUrl}/favicon.png`} />
+    <link rel="icon" type="image/png" href={`${dataBaseUrl}favicon.png`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,750&family=Space+Grotesk:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Gloock&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
       rel="stylesheet"
     />
   </head>
   <body data-base-url={dataBaseUrl}>
     <div class="site-container">
       <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
-        <a href={`${dataBaseUrl}/`} class="flex items-center gap-4">
+        <a href={dataBaseUrl || '/'} class="flex items-center gap-4">
           <div class="moon-mark" aria-hidden="true"></div>
-          <div>
-            <p class="text-xs uppercase tracking-[0.3em] text-latte-subtext0">
-              MoonBit + WASM ranker
-            </p>
-            <h1 class="text-3xl font-display md:text-4xl">Moonsorter</h1>
-          </div>
+          <h1 class="font-display text-4xl md:text-5xl">Moonsorter</h1>
         </a>
         <nav class="flex flex-wrap items-center gap-2">
           <a class="nav-link" href="https://github.com/brickfrog/moonsorter" rel="noopener">GitHub</a>
@@ -42,10 +37,9 @@ const {
       <main class="flex flex-col gap-16">
         <slot />
       </main>
-      <footer class="mt-16 border-t border-latte-surface1/60 py-6 text-xs text-latte-subtext0">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <span>Built with MoonBit + WASM.</span>
-        </div>
+      <footer class="site-footer">
+        <span>Built with MoonBit + WASM.</span>
+        <a href="https://github.com/brickfrog/moonsorter" rel="noopener">source</a>
       </footer>
     </div>
   </body>

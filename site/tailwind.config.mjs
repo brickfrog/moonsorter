@@ -34,8 +34,9 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Fraunces', 'serif'],
-        sans: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        display: ['Gloock', 'Georgia', 'serif'],
+        sans: ['Newsreader', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         glow: '0 18px 50px rgba(35, 41, 61, 0.12)',
