@@ -5,37 +5,62 @@ import { saveState } from './storage';
 import { updateProgress } from './progress';
 import { applyRanking } from './wasm';
 
+type Side = 'A' | 'B';
+
+function paintSide(side: Side, item: typeof state.items[number] | undefined) {
+  const meta = document.querySelector(`[data-choice-meta="${side}"]`);
+  const seed = document.querySelector(`[data-choice-seed="${side}"]`);
+  const cover = document.querySelector<HTMLImageElement>(
+    `[data-choice-cover="${side}"]`,
+  );
+  const posterLabel = document.querySelector(
+    `[data-choice-poster="${side}"] .compare-card-poster-label`,
+  );
+  const titleLabel = document.querySelector(`[data-choice-title-label="${side}"]`);
+
+  if (meta) {
+    if (item) {
+      const year =
+        item.airedYear || item.seasonYear || item.startedAtYear;
+      meta.textContent = year ? `${year}` : '';
+      meta.classList.toggle('hidden', !year);
+    } else {
+      meta.textContent = '';
+      meta.classList.add('hidden');
+    }
+  }
+
+  if (seed) {
+    if (item && item.score > 0) {
+      seed.innerHTML = `<span class="seed-label">seed</span> <span class="seed-value">${item.score}</span>`;
+      seed.classList.remove('hidden');
+    } else {
+      seed.innerHTML = '';
+      seed.classList.add('hidden');
+    }
+  }
+
+  if (cover) {
+    const src = item?.coverImage;
+    if (src) {
+      cover.src = src;
+      cover.classList.remove('hidden');
+      if (posterLabel) posterLabel.classList.add('hidden');
+    } else {
+      cover.removeAttribute('src');
+      cover.classList.add('hidden');
+      if (posterLabel) posterLabel.classList.remove('hidden');
+    }
+  }
+
+  if (titleLabel && item) {
+    titleLabel.textContent = item.title;
+  }
+}
+
 function updatePairMetadata(leftIndex: number, rightIndex: number) {
-  const leftMeta = document.querySelector('[data-choice-meta="A"]');
-  const rightMeta = document.querySelector('[data-choice-meta="B"]');
-  const leftItem = state.items[leftIndex];
-  const rightItem = state.items[rightIndex];
-
-  if (leftMeta && leftItem) {
-    const parts: string[] = [];
-    const year = leftItem.airedYear || leftItem.seasonYear || leftItem.startedAtYear;
-    if (year) parts.push(`${year}`);
-    if (leftItem.score > 0) parts.push(`Original: ${leftItem.score}`);
-    if (parts.length > 0) {
-      leftMeta.textContent = parts.join(' \u2022 ');
-      leftMeta.classList.remove('hidden');
-    } else {
-      leftMeta.classList.add('hidden');
-    }
-  }
-
-  if (rightMeta && rightItem) {
-    const parts: string[] = [];
-    const year = rightItem.airedYear || rightItem.seasonYear || rightItem.startedAtYear;
-    if (year) parts.push(`${year}`);
-    if (rightItem.score > 0) parts.push(`Original: ${rightItem.score}`);
-    if (parts.length > 0) {
-      rightMeta.textContent = parts.join(' \u2022 ');
-      rightMeta.classList.remove('hidden');
-    } else {
-      rightMeta.classList.add('hidden');
-    }
-  }
+  paintSide('A', state.items[leftIndex]);
+  paintSide('B', state.items[rightIndex]);
 }
 
 function updatePairStrategyBadge() {

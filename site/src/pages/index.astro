@@ -328,21 +328,26 @@ const baseUrl = import.meta.env.BASE_URL;
   <Comparison />
   <SortGroup />
 
-  <section class="card hidden" data-step="compare-actions">
-    <div class="flex flex-wrap gap-3">
-      <button class="btn-secondary" type="button" data-action="undo">
-        Undo last
+  <section class="hidden compare-actions-bar" data-step="compare-actions">
+    <div class="compare-actions-left">
+      <button class="btn-secondary btn-with-kbd" type="button" data-action="undo">
+        <span>Undo</span><span class="kbd-badge kbd-hint">U</span>
       </button>
-      <button class="btn-secondary" type="button" data-action="redo" disabled>
-        Redo
+      <button class="btn-secondary btn-with-kbd" type="button" data-action="redo" disabled>
+        <span>Redo</span><span class="kbd-badge kbd-hint">^Y</span>
       </button>
-      <label class="flex items-center gap-2 text-sm text-latte-subtext1 mr-2">
+      <button class="btn" type="button" data-action="finish">
+        Finish &amp; review
+      </button>
+      <label class="inline-tier-toggle">
         <input id="opt-in-tier-list" type="checkbox" checked />
-        <span>Generate visual tier list</span>
+        <span>Generate tier list</span>
       </label>
-      <button class="btn-secondary" type="button" data-action="finish">
-        Finish and review
-      </button>
+    </div>
+    <div class="compare-actions-right kbd-hint">
+      <span class="kbd-ref"><span class="kbd-badge">A</span>/<span class="kbd-badge">←</span> left</span>
+      <span class="kbd-ref"><span class="kbd-badge">B</span>/<span class="kbd-badge">→</span> right</span>
+      <span class="kbd-ref"><span class="kbd-badge">␣</span> tie</span>
     </div>
   </section>
 
