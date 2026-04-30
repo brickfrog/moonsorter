@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
 
 // Use base path for GitHub Pages, empty for custom domain/local
 const base = process.env.GITHUB_PAGES === 'true' ? '/moonsorter' : '';
@@ -13,7 +12,7 @@ export default defineConfig({
   redirects: {
     [`${base}/rank`]: `${base}/`,
   },
-  integrations: [tailwind({ applyBaseStyles: false })],
+  integrations: [],
   vite: {
     optimizeDeps: { exclude: ['moonsorter.wasm'] },
   },
