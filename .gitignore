@@ -1,4 +1,5 @@
 # MoonBit
+_build/
 target/
 .mooncakes/
 .moonagent/

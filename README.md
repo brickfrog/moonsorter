@@ -35,11 +35,11 @@ Converges to MLE without gradient computation or line search. Constraint: `sum(s
 Requires [MoonBit](https://www.moonbitlang.com/) toolchain.
 
 ```bash
-# Build WASM
-moon build --target wasm-gc
+# Build/check the MoonBit packages
+moon build --target wasm-gc --release
 
-# Copy output to site
-cp target/wasm-gc/release/build/src/src.wasm site/public/moonsorter.wasm
+# The browser app loads the checked-in WASM artifact:
+# site/public/moonsorter.wasm
 ```
 
 ## Run

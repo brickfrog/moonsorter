@@ -336,7 +336,6 @@ pub fn IndexedRanker::compute_uncertainty(
           let winner = remaining[winner_idx_in_remaining]
           new_items.push(winner.to_string())
           let _ = remaining.remove(winner_idx_in_remaining)
-
         } else {
           // Should not happen, but for safety:
           break
@@ -446,7 +445,7 @@ pub fn IndexedRanker::get_uncertainty_width_for(
   self : IndexedRanker,
   index : Int,
 ) -> Int {
-  if not(self.uncertainty_ready) || index < 0 || index >= self.n {
+  if !self.uncertainty_ready || index < 0 || index >= self.n {
     -1
   } else {
     self.uncertainty_widths[index]
@@ -455,7 +454,7 @@ pub fn IndexedRanker::get_uncertainty_width_for(
 
 ///|
 pub fn IndexedRanker::get_uncertainty_median_width(self : IndexedRanker) -> Int {
-  if not(self.uncertainty_ready) {
+  if !self.uncertainty_ready {
     -1
   } else {
     self.uncertainty_median_width
@@ -464,7 +463,7 @@ pub fn IndexedRanker::get_uncertainty_median_width(self : IndexedRanker) -> Int 
 
 ///|
 pub fn IndexedRanker::get_uncertainty_p90_width(self : IndexedRanker) -> Int {
-  if not(self.uncertainty_ready) {
+  if !self.uncertainty_ready {
     -1
   } else {
     self.uncertainty_p90_width
@@ -473,7 +472,7 @@ pub fn IndexedRanker::get_uncertainty_p90_width(self : IndexedRanker) -> Int {
 
 ///|
 pub fn IndexedRanker::get_uncertainty_width_target(self : IndexedRanker) -> Int {
-  if not(self.uncertainty_ready) {
+  if !self.uncertainty_ready {
     -1
   } else {
     let t = @math.round(self.n.to_double() * 0.05).to_int()
@@ -490,7 +489,7 @@ pub fn IndexedRanker::get_uncertainty_order_index(
   self : IndexedRanker,
   position : Int,
 ) -> Int {
-  if not(self.uncertainty_ready) || position < 0 || position >= self.n {
+  if !self.uncertainty_ready || position < 0 || position >= self.n {
     -1
   } else {
     self.uncertainty_order[position]
@@ -502,7 +501,7 @@ pub fn IndexedRanker::get_topk_stable_count(
   self : IndexedRanker,
   threshold : Double,
 ) -> Int {
-  if not(self.uncertainty_ready) || self.n == 0 {
+  if !self.uncertainty_ready || self.n == 0 {
     return 0
   }
   let cut = if threshold < 0.0 {
@@ -524,7 +523,7 @@ pub fn IndexedRanker::get_topk_stable_count(
 
 ///|
 pub fn IndexedRanker::get_rank_ci_low(self : IndexedRanker, index : Int) -> Int {
-  if not(self.uncertainty_ready) || index < 0 || index >= self.n {
+  if !self.uncertainty_ready || index < 0 || index >= self.n {
     -1
   } else {
     self.rank_ci_low[index]
@@ -536,7 +535,7 @@ pub fn IndexedRanker::get_rank_ci_high(
   self : IndexedRanker,
   index : Int,
 ) -> Int {
-  if not(self.uncertainty_ready) || index < 0 || index >= self.n {
+  if !self.uncertainty_ready || index < 0 || index >= self.n {
     -1
   } else {
     self.rank_ci_high[index]
@@ -548,7 +547,7 @@ pub fn IndexedRanker::get_rank_mean(
   self : IndexedRanker,
   index : Int,
 ) -> Double {
-  if not(self.uncertainty_ready) || index < 0 || index >= self.n {
+  if !self.uncertainty_ready || index < 0 || index >= self.n {
     -1.0
   } else {
     self.rank_mean[index]
@@ -560,7 +559,7 @@ pub fn IndexedRanker::get_topk_confidence(
   self : IndexedRanker,
   index : Int,
 ) -> Double {
-  if not(self.uncertainty_ready) || index < 0 || index >= self.n {
+  if !self.uncertainty_ready || index < 0 || index >= self.n {
     -1.0
   } else {
     self.topk_confidence[index]
