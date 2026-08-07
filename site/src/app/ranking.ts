@@ -6,7 +6,7 @@ import { state } from './state';
 import { saveState } from './storage';
 import { showStep } from './steps';
 import { updateProgress } from './progress';
-import { ensureWasm, applyRanking, resolvePairPolicy } from './wasm';
+import { ensureWasm, applyRanking, applyHistoryEntry, resolvePairPolicy } from './wasm';
 import { enterActiveStep } from './mode';
 
 function applyAnalysisDefaults(total: number) {
@@ -181,7 +181,7 @@ export async function startRanking(options: StartOptions) {
   if (state.comparisons.length > 0) {
     console.info('[rank] replaying comparisons', state.comparisons.length);
     state.comparisons.forEach((entry) => {
-      const ok = applyRanking(wasmApi, entry.indices);
+      const ok = applyHistoryEntry(wasmApi, entry);
       if (!ok) {
         console.warn('[rank] failed to replay comparison', entry);
       }

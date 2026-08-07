@@ -1,16 +1,10 @@
 const CLIENT_ID = import.meta.env.PUBLIC_ANILIST_CLIENT_ID as string | undefined;
+// The site builds as `output: 'static'` with no server routes, so the implicit
+// ('token') grant is the only flow that can complete. 'code' requires a server
+// that can hold the client secret and serve /api/anilist/token.
 const RESPONSE_TYPE = (import.meta.env
-  .PUBLIC_ANILIST_RESPONSE_TYPE as string | undefined) ?? 'code';
-const REDIRECT_URI = import.meta.env
-  .PUBLIC_ANILIST_REDIRECT_URI as string | undefined;
+  .PUBLIC_ANILIST_RESPONSE_TYPE as string | undefined) ?? 'token';
 const TOKEN_KEY = 'moonsorter.anilist_token';
-
-function getRedirectUri(): string {
-  if (REDIRECT_URI) return REDIRECT_URI;
-  if (typeof window === 'undefined') return '';
-  const base = import.meta.env.BASE_URL || '';
-  return `${window.location.origin}${base}callback`;
-}
 
 function storeToken(token: string): void {
   if (typeof window === 'undefined') return;

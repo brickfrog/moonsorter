@@ -38,6 +38,8 @@ export type AppState = {
   currentFilters: YearFilters;
   lastResults: ResultsPayload | null;
   selectedIndices: Set<number>;
+  /** Distinguishes "nothing selected yet" from "user deselected everything". */
+  selectionInitialized: boolean;
   analysisSamples: number;
   analysisTopK: number;
   analysisMaxIter: number;
@@ -76,6 +78,7 @@ export const state: AppState = {
   currentFilters: {},
   lastResults: null,
   selectedIndices: new Set(),
+  selectionInitialized: false,
   analysisSamples: 200,
   analysisTopK: 10,
   analysisMaxIter: 40,
@@ -97,6 +100,7 @@ export function resetState() {
   state.items = [];
   state.lastResults = null;
   state.selectedIndices = new Set();
+  state.selectionInitialized = false;
   state.currentFilters = {};
   state.currentGroup = null;
   state.pendingStart = null;

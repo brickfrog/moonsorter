@@ -50,21 +50,3 @@ export function applyImportMode(
       return list;
   }
 }
-
-export function applyYearFilters(list: Entry[], filters: YearFilters): Entry[] {
-  return list.filter((entry) => {
-    if (!withinYearRange(entry.airedYear ?? entry.seasonYear, filters.aired)) {
-      return false;
-    }
-    if (!withinYearRange(entry.startedAtYear, filters.started)) {
-      return false;
-    }
-    if (!withinYearRange(entry.completedAtYear, filters.completed)) {
-      return false;
-    }
-    if (!withinYearRange(entry.updatedAtYear, filters.updated)) {
-      return false;
-    }
-    return true;
-  });
-}

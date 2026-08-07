@@ -1,7 +1,6 @@
 export type WasmExports = {
   create_ranker: (count: number) => boolean;
   add_comparison: (indexA: number, indexB: number, result: number) => boolean;
-  add_ranking: (indices: number[]) => boolean;
   clear_ranking: () => void;
   add_to_ranking: (idx: number) => void;
   commit_ranking: () => boolean;
@@ -38,7 +37,6 @@ export type WasmExports = {
 type RawExports = WebAssembly.Exports & {
   create_ranker: (count: number) => boolean;
   add_comparison: (indexA: number, indexB: number, result: number) => boolean;
-  add_ranking: (indices: number[]) => boolean;
   clear_ranking: () => void;
   add_to_ranking: (idx: number) => void;
   commit_ranking: () => boolean;
@@ -91,8 +89,6 @@ function wrapExports(exports: RawExports): WasmExports {
       safeCall('add_comparison', () =>
         exports.add_comparison(indexA, indexB, result),
       ),
-    add_ranking: (indices: number[]) =>
-      safeCall('add_ranking', () => exports.add_ranking(indices)),
     clear_ranking: () => safeCall('clear_ranking', () => exports.clear_ranking()),
     add_to_ranking: (idx: number) =>
       safeCall('add_to_ranking', () => exports.add_to_ranking(idx)),
@@ -183,12 +179,5 @@ export async function loadWasm(): Promise<WasmExports> {
   const module = await WebAssembly.instantiate(bytes, {});
   console.info('[wasm] exports:', Object.keys(module.instance.exports));
   wasm = wrapExports(module.instance.exports as RawExports);
-  return wasm;
-}
-
-export function getWasm(): WasmExports {
-  if (!wasm) {
-    throw new Error('WASM not loaded');
-  }
   return wasm;
 }

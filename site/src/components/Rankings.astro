@@ -6,7 +6,7 @@ const { title = 'Results' } = Astro.props;
     <div class="pill">Step 5: Results</div>
     <h3 class="results-headline font-display" data-results-headline>{title}</h3>
     <p class="results-subhead">
-      CI bars show the 95% bootstrap rank interval. Amber stripe marks an uncertain row — click it to compare next.
+      CI bars are sized by the width of the 80% bootstrap rank interval. Amber stripe marks an uncertain row — click it to compare next.
     </p>
   </header>
 
@@ -27,7 +27,7 @@ const { title = 'Results' } = Astro.props;
               <th class="col-title cursor-pointer" data-sort="title">Title <span data-sort-indicator="title"></span></th>
               <th class="col-score cursor-pointer" data-sort="originalScore">Original <span data-sort-indicator="originalScore"></span></th>
               <th class="col-score cursor-pointer" data-sort="newScore">New <span data-sort-indicator="newScore"></span></th>
-              <th class="col-ci cursor-pointer" data-sort="rankCI">Rank CI · 95% <span data-sort-indicator="rankCI"></span></th>
+              <th class="col-ci cursor-pointer" data-sort="rankCI">Rank CI · 80% <span data-sort-indicator="rankCI"></span></th>
               <th class="col-topk cursor-pointer" data-sort="topKConfidence">Top-K <span data-sort-indicator="topKConfidence"></span></th>
             </tr>
           </thead>

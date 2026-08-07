@@ -232,17 +232,26 @@ pub fn newman_fit(
 }
 
 ///|
-pub fn pl_fit(
+/// MM fit for Plackett-Luce over index-encoded ranking events (Hunter 2004).
+///
+/// Each event is an ordered list of item indices, best to worst. Events with
+/// fewer than two entries carry no information and MUST be filtered out by the
+/// caller. `use_map` adds a unit prior to both sides of the MM update, which
+/// keeps the estimate finite when the comparison graph is not strongly
+/// connected (an unregularized PL likelihood has no finite maximizer there).
+pub fn pl_fit_indexed(
   n : Int,
-  events : Array[RankingEvent],
+  events : Array[Array[Int]],
   strengths : Array[Double],
-  item_to_idx : Map[String, Int],
   max_iter? : Int = 50,
   tolerance? : Double = 1.0e-5,
   use_map? : Bool = false,
 ) -> Array[Double] {
   if n <= 0 {
     return []
+  }
+  if events.length() == 0 {
+    return strengths
   }
   let limit = if max_iter < 1 { 1 } else { max_iter }
   let tol = if tolerance <= 0.0 { 1.0e-5 } else { tolerance }
@@ -252,33 +261,21 @@ pub fn pl_fit(
     let s = if i < strengths.length() { strengths[i] } else { 0.0 }
     gamma[i] = @math.exp(s)
   }
-  let filtered_events : Array[Array[Int]] = []
-  for event in events {
-    let indices : Array[Int] = []
-    for item in event.items {
-      match item_to_idx.get(item) {
-        Some(idx) => indices.push(idx)
-        None => ()
-      }
-    }
-    if indices.length() >= 2 {
-      filtered_events.push(indices)
-    }
-  }
-  if filtered_events.length() == 0 {
-    return strengths
-  }
+  let wins : Array[Double] = Array::make(n, 0.0)
+  let denom : Array[Double] = Array::make(n, 0.0)
   let mut iter = 0
   while iter < limit {
-    let wins : Array[Double] = Array::make(n, 0.0)
-    let denom : Array[Double] = Array::make(n, 0.0)
-    for event in filtered_events {
+    for i = 0; i < n; i = i + 1 {
+      wins[i] = 0.0
+      denom[i] = 0.0
+    }
+    for event in events {
       let len = event.length()
-      for pos = 0; pos < len; pos = pos + 1 {
-        let mut sum_gamma = 0.0
-        for k = pos; k < len; k = k + 1 {
-          sum_gamma = sum_gamma + gamma[event[k]]
-        }
+      // Walk positions back to front so the tail sum is carried rather than
+      // recomputed at every position.
+      let mut sum_gamma = 0.0
+      for pos = len - 1; pos >= 0; pos = pos - 1 {
+        sum_gamma = sum_gamma + gamma[event[pos]]
         if sum_gamma <= 0.0 {
           continue
         }
@@ -304,13 +301,15 @@ pub fn pl_fit(
       }
       gamma[i] = next
     }
-    let mut mean = 0.0
+    let mut total = 0.0
     for i = 0; i < n; i = i + 1 {
-      mean = mean + gamma[i]
+      total = total + gamma[i]
     }
-    if mean > 0.0 {
+    if total > 0.0 {
+      // Fix the scale: gamma is only identified up to a positive multiple.
+      let scale = n.to_double() / total
       for i = 0; i < n; i = i + 1 {
-        gamma[i] = gamma[i] / mean
+        gamma[i] = gamma[i] * scale
       }
     }
     if max_delta < tol {
@@ -323,6 +322,37 @@ pub fn pl_fit(
     out[i] = @math.ln(gamma[i])
   }
   out
+}
+
+///|
+/// String-keyed wrapper over `pl_fit_indexed`. Items absent from `item_to_idx`
+/// are dropped; events left with fewer than two items are discarded.
+pub fn pl_fit(
+  n : Int,
+  events : Array[RankingEvent],
+  strengths : Array[Double],
+  item_to_idx : Map[String, Int],
+  max_iter? : Int = 50,
+  tolerance? : Double = 1.0e-5,
+  use_map? : Bool = false,
+) -> Array[Double] {
+  if n <= 0 {
+    return []
+  }
+  let filtered_events : Array[Array[Int]] = []
+  for event in events {
+    let indices : Array[Int] = []
+    for item in event.items {
+      match item_to_idx.get(item) {
+        Some(idx) => indices.push(idx)
+        None => ()
+      }
+    }
+    if indices.length() >= 2 {
+      filtered_events.push(indices)
+    }
+  }
+  pl_fit_indexed(n, filtered_events, strengths, max_iter~, tolerance~, use_map~)
 }
 
 ///|
@@ -385,7 +415,7 @@ fn hashset_to_array(
 fn array_to_hashset(
   values : Array[(String, String)],
 ) -> @hashset.HashSet[(String, String)] {
-  let set = @hashset.new()
+  let set = @hashset.HashSet([])
   for pair in values {
     set.add(pair)
   }
@@ -407,7 +437,7 @@ pub struct BradleyTerryRanker {
 ///|
 pub fn BradleyTerryRanker::new(items : Array[String]) -> BradleyTerryRanker {
   let n = items.length()
-  let item_to_idx : Map[String, Int] = {}
+  let item_to_idx : Map[String, Int] = Map([])
   for i = 0; i < n; i = i + 1 {
     item_to_idx[items[i]] = i
   }
@@ -418,7 +448,7 @@ pub fn BradleyTerryRanker::new(items : Array[String]) -> BradleyTerryRanker {
     comparison_matrix: build_matrix_int(n),
     win_matrix: build_matrix_double(n),
     iteration_count: 0,
-    completed_comparisons: @hashset.new(),
+    completed_comparisons: @hashset.HashSet([]),
     history: [],
   }
 }
@@ -525,7 +555,7 @@ pub fn BradleyTerryRanker::compute_ordinal_rankings(
     indexed[i] = (i, self.strengths[i])
   }
   indexed.sort_by(fn(a, b) { b.1.compare(a.1) })
-  let ranks : Map[String, Int] = {}
+  let ranks : Map[String, Int] = Map([])
   for rank = 0; rank < n; rank = rank + 1 {
     let idx = indexed[rank].0
     ranks[self.items[idx]] = rank + 1
@@ -537,7 +567,7 @@ pub fn BradleyTerryRanker::compute_ordinal_rankings(
 pub fn BradleyTerryRanker::compute_ranks(
   self : BradleyTerryRanker,
 ) -> Map[String, Double] {
-  let result : Map[String, Double] = {}
+  let result : Map[String, Double] = Map([])
   for i = 0; i < self.items.length(); i = i + 1 {
     result[self.items[i]] = self.strengths[i]
   }
@@ -620,7 +650,7 @@ pub fn BradleyTerryRanker::to_save_state(
 pub fn BradleyTerryRanker::from_save_state(
   state : SaveState,
 ) -> BradleyTerryRanker {
-  let item_to_idx : Map[String, Int] = {}
+  let item_to_idx : Map[String, Int] = Map([])
   for i = 0; i < state.state.items.length(); i = i + 1 {
     item_to_idx[state.state.items[i]] = i
   }
@@ -678,7 +708,7 @@ pub struct PlackettLuceRanker {
 ///|
 pub fn PlackettLuceRanker::new(items : Array[String]) -> PlackettLuceRanker {
   let n = items.length()
-  let item_to_idx : Map[String, Int] = {}
+  let item_to_idx : Map[String, Int] = Map([])
   for i = 0; i < n; i = i + 1 {
     item_to_idx[items[i]] = i
   }
@@ -737,20 +767,36 @@ pub fn PlackettLuceRanker::add_ranking(
 }
 
 ///|
+/// Record one pairwise decision.
+///
+/// A tie contributes both orderings to the model but still counts as a single
+/// comparison and a single undo step, matching `IndexedRanker`.
 pub fn PlackettLuceRanker::update_single_query(
   self : PlackettLuceRanker,
   item_a : String,
   item_b : String,
   result : ComparisonResult,
 ) -> Unit {
+  if item_a == item_b ||
+    !self.item_to_idx.contains(item_a) ||
+    !self.item_to_idx.contains(item_b) {
+    return
+  }
+  self.history.push({
+    strengths: self.strengths.copy(),
+    events: self.events.copy(),
+    iteration_count: self.iteration_count,
+  })
   match result {
-    AWins => ignore(self.add_ranking([item_a, item_b]))
-    BWins => ignore(self.add_ranking([item_b, item_a]))
+    AWins => self.events.push({ items: [item_a, item_b] })
+    BWins => self.events.push({ items: [item_b, item_a] })
     Tie => {
-      ignore(self.add_ranking([item_a, item_b]))
-      ignore(self.add_ranking([item_b, item_a]))
+      self.events.push({ items: [item_a, item_b] })
+      self.events.push({ items: [item_b, item_a] })
     }
   }
+  self.iteration_count = self.iteration_count + 1
+  self.fit()
 }
 
 ///|
@@ -776,7 +822,7 @@ pub fn PlackettLuceRanker::compute_ordinal_rankings(
     indexed[i] = (i, self.strengths[i])
   }
   indexed.sort_by(fn(a, b) { b.1.compare(a.1) })
-  let ranks : Map[String, Int] = {}
+  let ranks : Map[String, Int] = Map([])
   for rank = 0; rank < n; rank = rank + 1 {
     let idx = indexed[rank].0
     ranks[self.items[idx]] = rank + 1
@@ -799,7 +845,7 @@ pub fn PlackettLuceRanker::compute_ranks(
   if total <= 0.0 {
     total = 1.0
   }
-  let result : Map[String, Double] = {}
+  let result : Map[String, Double] = Map([])
   for i = 0; i < n; i = i + 1 {
     result[self.items[i]] = weights[i] / total
   }

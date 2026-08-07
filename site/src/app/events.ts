@@ -6,7 +6,7 @@ import { dom, type StepKey } from './dom';
 import { state } from './state';
 import { showStep, navigateStep } from './steps';
 import { handleChoice, undoLast, redoLast, renderPair } from './comparison';
-import { showResults, renderResultsTable, setRenderTierListCallback } from './results';
+import { showResults, renderResultsTable } from './results';
 import { renderTierList, downloadTierListImage } from './tier-list';
 import { submitSort, skipSort, startGroupSort } from './group';
 import { setImportPath, applyModeSelection, enterActiveStep } from './mode';
@@ -19,9 +19,6 @@ import { saveState } from './storage';
 import type { RankGoal, RankMode } from '../lib/types';
 
 export function setupEvents() {
-  // Wire up tier list callback
-  setRenderTierListCallback(renderTierList);
-
   // Choice buttons for pairwise comparison
   dom.choiceButtons.forEach((button) => {
     button.addEventListener('click', () => {
@@ -35,6 +32,20 @@ export function setupEvents() {
   // Keyboard shortcuts for comparison
   document.addEventListener('keydown', (event) => {
     if (dom.steps.compare?.classList.contains('hidden')) return;
+    // A .modal-overlay is `fixed inset-0`, which blocks the pointer but not
+    // the keyboard; without this the shortcuts keep firing behind a dialog.
+    const modalOpen = Array.from(
+      document.querySelectorAll('.modal-overlay'),
+    ).some((modal) => !modal.classList.contains('hidden'));
+    if (modalOpen) return;
+    // Let focused controls (the tier-list checkbox, the action buttons) keep
+    // their own Space/Enter behaviour.
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest('input, button, select, textarea')
+    ) {
+      return;
+    }
     if (event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') {
       handleChoice(1);
     }
@@ -258,8 +269,8 @@ export function setupEvents() {
   if (selectAllButton) {
     selectAllButton.addEventListener('click', () => {
       if (!state.lastResults) return;
-      state.selectedIndices = new Set((state.lastResults as any).rows.map((row: any) => row.index));
-      renderResultsTable(state.lastResults as any);
+      state.selectedIndices = new Set(state.lastResults.rows.map((row) => row.index));
+      renderResultsTable(state.lastResults);
     });
   }
 
@@ -268,8 +279,9 @@ export function setupEvents() {
   if (selectNoneButton) {
     selectNoneButton.addEventListener('click', () => {
       state.selectedIndices = new Set();
+      state.selectionInitialized = true;
       if (state.lastResults) {
-        renderResultsTable(state.lastResults as any);
+        renderResultsTable(state.lastResults);
       }
     });
   }
@@ -287,7 +299,7 @@ export function setupEvents() {
         state.sortDirection = 'asc';
       }
 
-      renderResultsTable(state.lastResults as any);
+      renderResultsTable(state.lastResults);
     });
   });
 
@@ -339,7 +351,7 @@ export function setupEvents() {
   if (dom.tierKValue) {
     dom.tierKValue.addEventListener('change', () => {
       if (state.lastResults) {
-        renderTierList(state.lastResults as any);
+        renderTierList(state.lastResults);
       }
     });
   }

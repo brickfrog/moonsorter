@@ -1121,6 +1121,16 @@
     box-shadow: inset 3px 0 0 #f2c774;
   }
 
+  /* Applied for 2s when a tier-list poster is clicked (app/tier-list.ts). */
+  .results-table tbody tr.highlight-flash {
+    animation: row-highlight 2s ease-out;
+  }
+
+  @keyframes row-highlight {
+    0%, 60% { background: rgba(242, 199, 116, 0.28); }
+    100% { background: transparent; }
+  }
+
   .topk-label {
     font-family: 'Newsreader', Georgia, serif;
     font-size: 15px;

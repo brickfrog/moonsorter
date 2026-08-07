@@ -1,0 +1,13 @@
+name = "brickfrog/moonsorter"
+
+version = "0.1.0"
+
+readme = "README.md"
+
+repository = "https://github.com/brickfrog/moonsorter"
+
+license = "Apache-2.0"
+
+keywords = [ ]
+
+description = "Browser-based ranking system using Plackett-Luce model with uncertainty quantification"

@@ -1,4 +1,5 @@
 import { loadWasm, type WasmExports } from '../lib/wasm';
+import type { RankingHistoryEntry } from '../lib/types';
 import { state } from './state';
 
 export async function ensureWasm(): Promise<WasmExports> {
@@ -17,6 +18,22 @@ export function applyRanking(wasm: WasmExports, indices: number[]): boolean {
     wasm.add_to_ranking(idx);
   }
   return wasm.commit_ranking();
+}
+
+/**
+ * Replay one recorded decision.
+ *
+ * A tie goes through `add_comparison`, which records both orderings as a
+ * single comparison and a single undo step; anything else is a plain ordering.
+ */
+export function applyHistoryEntry(
+  wasm: WasmExports,
+  entry: RankingHistoryEntry,
+): boolean {
+  if (entry.tie && entry.indices.length === 2) {
+    return wasm.add_comparison(entry.indices[0], entry.indices[1], 2);
+  }
+  return applyRanking(wasm, entry.indices);
 }
 
 export function resolvePairPolicy(): number {

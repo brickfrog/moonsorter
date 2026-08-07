@@ -1,62 +1,30 @@
 import { setStatus } from '../lib/utils';
 import { escapeCsv } from '../lib/csv';
-import { getScoreConfig, getScoreRange, mapRankToScore } from '../lib/scores';
 import type { SavedState } from '../lib/types';
 import { dom } from './dom';
 import { state } from './state';
+import { buildResultsPayload } from './results';
 
-function shouldPreserveScoreSlots(): boolean {
-  return state.preserveRange && state.useScorePrior;
-}
-
+/**
+ * Scores to write back to AniList.
+ *
+ * Built from the same rows the results table renders, so an uploaded score can
+ * never disagree with the score the user was shown. Selection and the unscored
+ * filter choose *which* rows are sent; they must not influence *how* a score is
+ * computed, which depends on rank across the whole ranked set.
+ */
 export function buildUploadPayload() {
-  if (!state.wasm || !state.items.length) return [];
+  const payload = buildResultsPayload();
+  if (!payload) return [];
   const useSelection = state.lastResults != null;
   if (useSelection && state.selectedIndices.size === 0) {
     return [];
   }
-  const config = getScoreConfig(state.scoreFormat);
-  const range = state.preserveRange ? getScoreRange(state.items) : null;
-
-  // Build score slots for preserving range
-  const scoreSlots = shouldPreserveScoreSlots()
-    ? state.items
-        .map((entry) => entry.score)
-        .filter((score) => score > 0)
-        .sort((a, b) => b - a)
-    : [];
-
-  const entries = state.items
-    .map((item, index) => ({
-      index,
-      title: item.title,
-      mediaId: item.mediaId,
-      originalScore: item.score,
-      rank: state.wasm!.get_rank_for(index),
-    }))
-    .filter((entry) => entry.rank > 0 && entry.mediaId != null)
-    .filter((entry) => !useSelection || state.selectedIndices.has(entry.index))
-    .filter((entry) => state.includeUnscored || entry.originalScore > 0)
-    .sort((a, b) => a.rank - b.rank);
-
-  const total = entries.length;
-
-  // Assign scores by rank using slots
-  const scoredEntries = entries
-    .filter((entry) => entry.originalScore > 0)
-    .sort((a, b) => a.rank - b.rank);
-  const limit = Math.min(scoredEntries.length, scoreSlots.length);
-  const slotMap = new Map<number, number>();
-  for (let i = 0; i < limit; i += 1) {
-    slotMap.set(scoredEntries[i].index, scoreSlots[i]);
-  }
-
-  return entries.map((entry) => {
-    const score =
-      slotMap.get(entry.index) ??
-      mapRankToScore(entry.rank, total, config, range);
-    return { mediaId: entry.mediaId as number, score };
-  });
+  return payload.rows
+    .filter((row) => row.mediaId != null)
+    .filter((row) => !useSelection || state.selectedIndices.has(row.index))
+    .filter((row) => state.includeUnscored || row.originalScore > 0)
+    .map((row) => ({ mediaId: row.mediaId as number, score: row.newScore }));
 }
 
 export function downloadSession() {
@@ -123,7 +91,7 @@ export function downloadCsv() {
       'topk_confidence',
     ].join(','),
   ];
-  (state.lastResults as any).rows.forEach((row: any) => {
+  state.lastResults.rows.forEach((row) => {
     lines.push(
       [
         row.rank.toString(),

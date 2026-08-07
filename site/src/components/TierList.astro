@@ -62,13 +62,14 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   }
 
-  /* Standard Tier List Colors */
-  .tier-row:nth-child(1) .tier-label { background-color: #FFD700; } /* S - Gold */
-  .tier-row:nth-child(2) .tier-label { background-color: #ffbf7f; } /* A - Orange */
-  .tier-row:nth-child(3) .tier-label { background-color: #ffff7f; } /* B - Yellow */
-  .tier-row:nth-child(4) .tier-label { background-color: #7fff7f; } /* C - Green */
-  .tier-row:nth-child(5) .tier-label { background-color: #9CA3AF; } /* D - Gray */
-  .tier-row:nth-child(n+6) .tier-label { background-color: #6B7280; } /* F+ - Dark Gray */
+  /* Standard tier list colors, keyed to the tier index rather than DOM
+     position so that skipping an empty tier does not shift every color. */
+  .tier-row[data-tier="0"] .tier-label { background-color: #FFD700; } /* S - Gold */
+  .tier-row[data-tier="1"] .tier-label { background-color: #ffbf7f; } /* A - Orange */
+  .tier-row[data-tier="2"] .tier-label { background-color: #ffff7f; } /* B - Yellow */
+  .tier-row[data-tier="3"] .tier-label { background-color: #7fff7f; } /* C - Green */
+  .tier-row[data-tier="4"] .tier-label { background-color: #9CA3AF; } /* D - Gray */
+  .tier-row .tier-label { background-color: #6B7280; } /* E, F - Dark Gray */
 
   .tier-items {
     display: flex;

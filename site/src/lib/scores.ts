@@ -51,6 +51,12 @@ export function getScoreRange(entries: Entry[]): ScoreRange | null {
   return { min: Math.min(...scores), max: Math.max(...scores) };
 }
 
+/**
+ * Map a 1-based rank onto the score scale.
+ *
+ * Rank 1 receives `effectiveMax` and rank `total` receives `effectiveMin`;
+ * `t` therefore runs 1 -> 0 across ranks 1..total, not 0..total-1.
+ */
 export function mapRankToScore(
   rank: number,
   total: number,
@@ -60,7 +66,7 @@ export function mapRankToScore(
   const effectiveMax = originalRange?.max ?? config.max;
   const effectiveMin = originalRange?.min ?? 1;
   if (total <= 1) return effectiveMax;
-  const t = (total - 1 - rank) / (total - 1);
+  const t = (total - rank) / (total - 1);
   const raw = effectiveMin + t * (effectiveMax - effectiveMin);
   return roundToStep(Math.max(1, raw), config.step);
 }

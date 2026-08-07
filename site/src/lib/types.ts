@@ -12,7 +12,11 @@ export type Entry = {
   coverImage?: string;
 };
 
-export type RankingHistoryEntry = { indices: number[] };
+/**
+ * One recorded decision. `tie` marks the both-directions pair so that replay
+ * and undo treat it as the single decision the user actually made.
+ */
+export type RankingHistoryEntry = { indices: number[]; tie?: boolean };
 
 export type RankGoal = 'rescore' | 'scratch';
 export type RankMode = 'pairwise' | 'group' | 'group-pairwise';
@@ -73,24 +77,35 @@ export type StartOptions = {
 
 export type ResultRow = {
   index: number;
-  title: string;
   mediaId: number | null;
+  title: string;
   originalScore: number;
-  newScore: number;
-  strength: number;
+  /** 1-based ordinal rank from the ranker. */
   rank: number;
-  uncertainty: number;
-  lowerBound: number;
-  upperBound: number;
+  newScore: number;
+  /** Bootstrap rank interval; absent until an analysis has been run. */
+  rankLow?: number;
+  rankHigh?: number;
+  rankMean?: number;
+  topKConfidence?: number;
   coverImage?: string;
 };
 
 export type ResultsPayload = {
+  generatedAt: string;
+  scoreFormat: ScoreFormat;
+  preserveRange: boolean;
+  includeUnscored: boolean;
+  mediaType: MediaType;
+  importMode: string;
+  sliceCount: number;
+  useScorePrior: boolean;
+  filters: Record<string, unknown>;
+  analysis?: {
+    samples: number;
+    topK: number;
+    maxIter: number;
+    computedAt: string;
+  };
   rows: ResultRow[];
-  config: ScoreConfig;
-  totalComparisons: number;
-  analysisSamples?: number;
-  analysisTopK?: number;
-  analysisIterations?: number;
-  analysisComputedAt?: string;
 };

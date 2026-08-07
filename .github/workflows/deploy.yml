@@ -17,12 +17,29 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./site
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # site/public/moonsorter.wasm is committed and served as-is. Rebuild it
+      # here and fail on drift, so the shipped binary can never silently
+      # diverge from the MoonBit sources again.
+      - name: Set up MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: Check MoonBit sources
+        run: |
+          moon version --all
+          moon check --deny-warn
+          moon test
+
+      - name: Verify the committed WASM matches the sources
+        run: |
+          moon build --target wasm-gc --release
+          cmp _build/wasm-gc/release/build/web/web.wasm site/public/moonsorter.wasm \
+            || { echo "::error::site/public/moonsorter.wasm is stale. Run 'moon build --target wasm-gc --release && cp _build/wasm-gc/release/build/web/web.wasm site/public/moonsorter.wasm' and commit the result."; exit 1; }
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -37,9 +54,11 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+        working-directory: ./site
 
       - name: Build site
         run: bun run build
+        working-directory: ./site
         env:
           GITHUB_PAGES: 'true'
           PUBLIC_ANILIST_CLIENT_ID: ${{ secrets.PUBLIC_ANILIST_CLIENT_ID }}

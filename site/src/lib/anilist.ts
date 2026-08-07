@@ -50,6 +50,13 @@ async function fetchGraphQL<T>(
     },
     body: JSON.stringify({ query, variables }),
   });
+  if (!response.ok) {
+    throw new Error(
+      response.status === 429
+        ? 'AniList rate limit reached. Wait a minute and try again.'
+        : `AniList request failed: ${response.status}`,
+    );
+  }
   const payload = (await response.json()) as GraphQLResponse<T>;
   if (payload.errors && payload.errors.length) {
     throw new Error(payload.errors.map((err) => err.message).join(', '));

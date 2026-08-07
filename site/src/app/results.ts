@@ -1,5 +1,5 @@
 import { getToken } from '../lib/auth';
-import type { ResultsPayload, ScoreConfig } from '../lib/types';
+import type { ResultRow, ResultsPayload, ScoreConfig } from '../lib/types';
 import {
   getScoreConfig,
   getScoreRange,
@@ -12,39 +12,6 @@ import { state } from './state';
 import { showStep } from './steps';
 import { saveState } from './storage';
 import { renderPair } from './comparison';
-
-export type ResultRow = {
-  index: number;
-  mediaId: number | null;
-  title: string;
-  originalScore: number;
-  rank: number;
-  newScore: number;
-  rankLow?: number;
-  rankHigh?: number;
-  rankMean?: number;
-  topKConfidence?: number;
-  coverImage?: string;
-};
-
-export type LocalResultsPayload = {
-  generatedAt: string;
-  scoreFormat: string;
-  preserveRange: boolean;
-  includeUnscored: boolean;
-  mediaType: string;
-  importMode: string;
-  sliceCount: number;
-  useScorePrior: boolean;
-  filters: Record<string, unknown>;
-  analysis?: {
-    samples: number;
-    topK: number;
-    maxIter: number;
-    computedAt: string;
-  };
-  rows: ResultRow[];
-};
 
 function shouldPreserveScoreSlots(): boolean {
   return state.preserveRange && state.useScorePrior;
@@ -73,7 +40,7 @@ function assignScoresByRank(
   return map;
 }
 
-export function buildResultsPayload(): LocalResultsPayload | null {
+export function buildResultsPayload(): ResultsPayload | null {
   if (!state.wasm) return null;
   const analysisReady = state.wasm.get_uncertainty_ready();
   const analysisMeta = analysisReady
@@ -145,48 +112,79 @@ export function buildResultsPayload(): LocalResultsPayload | null {
   };
 }
 
+/**
+ * Send the user back to the comparison step with `row` paired against its
+ * least-certain rank neighbour. Shared by the uncertain rows in the results
+ * table and by the sidebar chips in renderAnalysisSummary.
+ */
+function focusComparisonFor(row: ResultRow, rows: ResultRow[]) {
+  if (!state.wasm) return;
+  const rowByRank = new Map(rows.map((r) => [r.rank, r]));
+  const prev = rowByRank.get(row.rank - 1);
+  const next = rowByRank.get(row.rank + 1);
+  let neighbor: ResultRow | undefined;
+  if (prev && next) {
+    neighbor =
+      state.wasm.get_uncertainty_width_for(prev.index) >=
+      state.wasm.get_uncertainty_width_for(next.index)
+        ? prev
+        : next;
+  } else {
+    neighbor = prev ?? next;
+  }
+  if (!neighbor) return;
+  state.rankPhase = 'pairwise';
+  saveState();
+  state.focusPair = [row.index, neighbor.index];
+  showStep('compare');
+  renderPair();
+}
+
 function updateSelectionStatus(total: number) {
   if (!dom.selectionStatus) return;
   dom.selectionStatus.textContent = `${state.selectedIndices.size} / ${total} selected`;
 }
 
-export function renderResultsTable(payload: LocalResultsPayload) {
+export function renderResultsTable(payload: ResultsPayload) {
   if (!dom.rankingsBody) return;
   dom.rankingsBody.innerHTML = '';
-  if (!state.selectedIndices.size) {
+  // Default to everything selected on the first render only. Inferring intent
+  // from an empty set would silently re-select every row after "Select none"
+  // or after the user unchecks the last one and re-sorts.
+  if (!state.selectionInitialized) {
     state.selectedIndices = new Set(payload.rows.map((row) => row.index));
+    state.selectionInitialized = true;
   }
-  const config = getScoreConfig(payload.scoreFormat as any);
+  const config = getScoreConfig(payload.scoreFormat);
   const analysisReady = Boolean(payload.analysis && state.wasm);
   const widthTarget =
     analysisReady && state.wasm ? state.wasm.get_uncertainty_width_target() : null;
 
-  // Sort rows if a column is selected
-  let sortedRows = [...payload.rows];
-  if (state.sortColumn) {
+  // Sort rows if a column is selected. payload.rows arrives in rank order, and
+  // Array.prototype.sort is stable, so equal keys keep rank as the tie-break.
+  const sortKeys: Record<string, (row: ResultRow) => number | string> = {
+    rank: (row) => row.rank,
+    title: (row) => row.title.toLowerCase(),
+    originalScore: (row) => row.originalScore,
+    newScore: (row) => row.newScore,
+    // The cell renders a bar proportional to interval WIDTH, so order by
+    // width. Ordering by the lower bound just reproduces rank order and reads
+    // as a broken sort.
+    rankCI: (row) =>
+      row.rankLow != null && row.rankHigh != null
+        ? row.rankHigh - row.rankLow
+        : -1,
+    topKConfidence: (row) => row.topKConfidence ?? -1,
+  };
+  const sortedRows = [...payload.rows];
+  const sortKey = state.sortColumn ? sortKeys[state.sortColumn] : undefined;
+  if (sortKey) {
+    const direction = state.sortDirection === 'asc' ? 1 : -1;
     sortedRows.sort((a, b) => {
-      let aVal: any, bVal: any;
-      if (state.sortColumn === 'rank') {
-        aVal = a.rank;
-        bVal = b.rank;
-      } else if (state.sortColumn === 'title') {
-        aVal = a.title.toLowerCase();
-        bVal = b.title.toLowerCase();
-      } else if (state.sortColumn === 'originalScore') {
-        aVal = a.originalScore;
-        bVal = b.originalScore;
-      } else if (state.sortColumn === 'newScore') {
-        aVal = a.newScore;
-        bVal = b.newScore;
-      } else if (state.sortColumn === 'rankCI') {
-        aVal = a.rankLow ?? 9999;
-        bVal = b.rankLow ?? 9999;
-      } else if (state.sortColumn === 'topKConfidence') {
-        aVal = a.topKConfidence ?? -1;
-        bVal = b.topKConfidence ?? -1;
-      }
-      if (aVal < bVal) return state.sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return state.sortDirection === 'asc' ? 1 : -1;
+      const aVal = sortKey(a);
+      const bVal = sortKey(b);
+      if (aVal < bVal) return -direction;
+      if (aVal > bVal) return direction;
       return 0;
     });
   }
@@ -220,6 +218,15 @@ export function renderResultsTable(payload: LocalResultsPayload) {
       if (width > widthTarget) {
         tr.classList.add('is-uncertain');
         isUncertain = true;
+        // The results subhead promises this; without it the amber stripe is
+        // decoration.
+        tr.title = 'Compare this title next';
+        tr.addEventListener('click', (event) => {
+          if (event.target instanceof HTMLElement && event.target.closest('input')) {
+            return;
+          }
+          focusComparisonFor(row, payload.rows);
+        });
       }
     }
 
@@ -342,7 +349,7 @@ export function renderResultsTable(payload: LocalResultsPayload) {
   updateResultsHeadline(payload);
 }
 
-function updateResultsHeadline(payload: LocalResultsPayload) {
+function updateResultsHeadline(payload: ResultsPayload) {
   if (!dom.resultsHeadline) return;
   const count = payload.rows.length;
   if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
@@ -361,7 +368,7 @@ function updateResultsHeadline(payload: LocalResultsPayload) {
     `<em>${qualifier}</em> at ${pct.toFixed(1)}%.`;
 }
 
-export function renderAnalysisSummary(payload: LocalResultsPayload) {
+export function renderAnalysisSummary(payload: ResultsPayload) {
   if (!dom.analysisSummary) return;
   if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
     dom.analysisSummary.classList.add('hidden');
@@ -422,72 +429,36 @@ export function renderAnalysisSummary(payload: LocalResultsPayload) {
       return;
     }
     const rowByIndex = new Map(payload.rows.map((row) => [row.index, row]));
-    const rowByRank = new Map(payload.rows.map((row) => [row.rank, row]));
-    const ranked: Array<{
-      index: number;
-      title: string;
-      rank: number;
-      width: number;
-    }> = [];
     const limit = Math.min(6, payload.rows.length);
     for (let i = 0; i < limit; i += 1) {
       const idx = state.wasm.get_uncertainty_order_index(i);
       if (idx < 0) break;
       const row = rowByIndex.get(idx);
       if (!row) continue;
-      ranked.push({
-        index: idx,
-        title: row.title,
-        rank: row.rank,
-        width: state.wasm.get_uncertainty_width_for(idx),
-      });
-    }
-    const pickNeighborIndex = (row: ResultRow): number | null => {
-      const prev = rowByRank.get(row.rank - 1);
-      const next = rowByRank.get(row.rank + 1);
-      if (prev && next) {
-        const prevWidth = state.wasm!.get_uncertainty_width_for(prev.index);
-        const nextWidth = state.wasm!.get_uncertainty_width_for(next.index);
-        return prevWidth >= nextWidth ? prev.index : next.index;
-      }
-      if (prev) return prev.index;
-      if (next) return next.index;
-      return null;
-    };
-    ranked.forEach((entry) => {
+      const width = state.wasm.get_uncertainty_width_for(idx);
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'analysis-chip';
-      button.textContent = `#${entry.rank} ${entry.title} (CI ${entry.width})`;
-      button.addEventListener('click', () => {
-        const row = rowByIndex.get(entry.index);
-        if (!row) return;
-        const neighborIndex = pickNeighborIndex(row);
-        if (neighborIndex == null) return;
-        state.rankPhase = 'pairwise';
-        saveState();
-        state.focusPair = [entry.index, neighborIndex];
-        showStep('compare');
-        renderPair();
-      });
-      dom.analysisUncertainList!.appendChild(button);
-    });
+      button.textContent = `#${row.rank} ${row.title} (CI ${width})`;
+      button.addEventListener('click', () => focusComparisonFor(row, payload.rows));
+      dom.analysisUncertainList.appendChild(button);
+    }
   }
   dom.analysisSummary.classList.remove('hidden');
   dom.uncertainCard?.classList.remove('hidden');
 }
 
 // Forward declaration for tier list rendering
-let renderTierListCallback: ((payload: LocalResultsPayload) => void) | null = null;
+let renderTierListCallback: ((payload: ResultsPayload) => void) | null = null;
 
-export function setRenderTierListCallback(fn: (payload: LocalResultsPayload) => void) {
+export function setRenderTierListCallback(fn: (payload: ResultsPayload) => void) {
   renderTierListCallback = fn;
 }
 
 export function showResults() {
   const payload = buildResultsPayload();
   if (!payload) return;
-  state.lastResults = payload as unknown as ResultsPayload;
+  state.lastResults = payload;
   renderResultsTable(payload);
   renderAnalysisSummary(payload);
   if (renderTierListCallback) renderTierListCallback(payload);

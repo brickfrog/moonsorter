@@ -1,0 +1,69 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "brickfrog/moonsorter/web"
+
+// Values
+pub fn add_comparison(Int, Int, Int) -> Bool
+
+pub fn add_to_ranking(Int) -> Unit
+
+pub fn clear_ranking() -> Unit
+
+pub fn commit_ranking() -> Bool
+
+pub fn compute_tiers(Int) -> Int
+
+pub fn compute_uncertainty(Int, Int, Int) -> Bool
+
+pub fn create_ranker(Int) -> Bool
+
+pub fn get_next_pair_encoded(Double, Double) -> Int
+
+pub fn get_progress_completed() -> Int
+
+pub fn get_progress_estimated() -> Int
+
+pub fn get_rank_ci_high(Int) -> Int
+
+pub fn get_rank_ci_low(Int) -> Int
+
+pub fn get_rank_for(Int) -> Int
+
+pub fn get_rank_mean(Int) -> Double
+
+pub fn get_tier_for(Int) -> Int
+
+pub fn get_topk_confidence(Int) -> Double
+
+pub fn get_topk_stable_count(Double) -> Int
+
+pub fn get_uncertainty_median_width() -> Int
+
+pub fn get_uncertainty_order_index(Int) -> Int
+
+pub fn get_uncertainty_p90_width() -> Int
+
+pub fn get_uncertainty_ready() -> Bool
+
+pub fn get_uncertainty_samples() -> Int
+
+pub fn get_uncertainty_top_k() -> Int
+
+pub fn get_uncertainty_width_for(Int) -> Int
+
+pub fn get_uncertainty_width_target() -> Int
+
+pub fn set_pair_policy(Int) -> Bool
+
+pub fn set_sampling_seed(Int) -> Bool
+
+pub fn set_uncertainty_prior(Double) -> Bool
+
+pub fn undo_last() -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

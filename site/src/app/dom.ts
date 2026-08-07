@@ -130,7 +130,3 @@ export const dom = {
   // Upload button
   uploadButton: query<HTMLButtonElement>('[data-action="upload"]'),
 };
-
-export function getStepElement(name: keyof Steps): HTMLElement | null {
-  return dom.steps[name];
-}

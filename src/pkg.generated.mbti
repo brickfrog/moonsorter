@@ -21,6 +21,8 @@ pub fn newman_fit(Array[Double], Array[Array[Int]], Array[Array[Double]], max_it
 
 pub fn pl_fit(Int, Array[RankingEvent], Array[Double], Map[String, Int], max_iter? : Int, tolerance? : Double, use_map? : Bool) -> Array[Double]
 
+pub fn pl_fit_indexed(Int, Array[Array[Int]], Array[Double], max_iter? : Int, tolerance? : Double, use_map? : Bool) -> Array[Double]
+
 // Errors
 
 // Types and methods
@@ -97,7 +99,6 @@ pub struct IndexedRanker {
 pub fn IndexedRanker::add_ranking(Self, Array[Int]) -> Bool
 pub fn IndexedRanker::compute_ordinal_ranks(Self) -> Array[Int]
 pub fn IndexedRanker::compute_uncertainty(Self, Int, Int, Int) -> Bool
-pub fn IndexedRanker::get_most_informative_pair(Self) -> (Int, Int)?
 pub fn IndexedRanker::get_next_pair(Self, Double, Double) -> (Int, Int)?
 pub fn IndexedRanker::get_progress(Self) -> (Int, Int)
 pub fn IndexedRanker::get_random_pair(Self, Double) -> (Int, Int)?
@@ -181,4 +182,3 @@ pub struct SaveState {
 // Type aliases
 
 // Traits
-

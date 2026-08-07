@@ -3,7 +3,7 @@ import { dom } from './dom';
 import { state } from './state';
 import { saveState } from './storage';
 import { updateProgress } from './progress';
-import { applyRanking } from './wasm';
+import { applyHistoryEntry } from './wasm';
 
 type Side = 'A' | 'B';
 
@@ -144,35 +144,19 @@ export function handleChoice(result: number) {
   state.redoStack = [];
   updateRedoButton();
 
-  // result: 1=A wins, 2=Tie, 3=B wins
-  let indices: number[];
-  if (result === 1) {
-    indices = [left, right];
-  } else if (result === 3) {
-    indices = [right, left];
-  } else {
-    // Tie handles by adding both directions (approximate)
-    indices = [left, right];
-    const ok1 = applyRanking(state.wasm, [left, right]);
-    const ok2 = applyRanking(state.wasm, [right, left]);
-    if (!ok1 || !ok2) {
-      setStatus(dom.importStatus, 'Failed to record tie.');
-      return;
-    }
-    state.comparisons.push({ indices: [left, right] });
-    state.comparisons.push({ indices: [right, left] });
-    saveState();
-    updateProgress();
-    renderPair();
-    return;
-  }
-
-  const ok = applyRanking(state.wasm, indices);
+  // result: 1=A wins, 2=Tie, 3=B wins — the same encoding `add_comparison`
+  // takes. Routing the tie through it keeps both orderings in the model while
+  // still costing one comparison and one undo step.
+  const ok = state.wasm.add_comparison(left, right, result);
   if (!ok) {
     setStatus(dom.importStatus, 'Failed to record comparison.');
     return;
   }
-  state.comparisons.push({ indices });
+  state.comparisons.push(
+    result === 2
+      ? { indices: [left, right], tie: true }
+      : { indices: result === 3 ? [right, left] : [left, right] },
+  );
   saveState();
   updateProgress();
   renderPair();
@@ -208,7 +192,7 @@ export function redoLast() {
   const toRedo = state.redoStack.pop();
   if (!toRedo) return;
 
-  const ok = applyRanking(state.wasm, toRedo.indices);
+  const ok = applyHistoryEntry(state.wasm, toRedo);
   if (!ok) {
     setStatus(dom.importStatus, 'Redo failed.');
     state.redoStack.push(toRedo); // put it back

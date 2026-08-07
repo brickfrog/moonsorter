@@ -57,6 +57,23 @@ test "PlackettLuceRanker undo works" {
 }
 
 ///|
+test "PlackettLuceRanker tie is one comparison and one undo" {
+  let ranker = PlackettLuceRanker::new(["X", "Y"])
+  ranker.update_single_query("X", "Y", Tie)
+  inspect(ranker.total_comparisons(), content="1")
+  inspect(ranker.undo_last(), content="true")
+  inspect(ranker.total_comparisons(), content="0")
+}
+
+///|
+test "PlackettLuceRanker ignores an unknown or self comparison" {
+  let ranker = PlackettLuceRanker::new(["X", "Y"])
+  ranker.update_single_query("X", "X", AWins)
+  ranker.update_single_query("X", "Z", AWins)
+  inspect(ranker.total_comparisons(), content="0")
+}
+
+///|
 test "indexed ranker basic flow" {
   let ranker = IndexedRanker::new(3)
   let ok = ranker.add_ranking([0, 1, 2])
@@ -90,4 +107,106 @@ test "indexed ranker pair policies return valid pair" {
   ranker.set_pair_policy(2)
   let pair2 = ranker.get_next_pair(0.0, 0.9).unwrap()
   inspect(pair2.0 != pair2.1, content="true")
+}
+
+///|
+test "tie is one comparison and one undo step" {
+  let ranker = IndexedRanker::new(3)
+  inspect(ranker.update_single_query(0, 1, Tie), content="true")
+  inspect(ranker.total_comparisons(), content="1")
+  // A tie feeds both orderings to the model but must undo in a single step,
+  // otherwise one undo silently turns the tie into "A wins".
+  inspect(ranker.undo_last(), content="true")
+  inspect(ranker.total_comparisons(), content="0")
+  inspect(ranker.undo_last(), content="false")
+}
+
+///|
+test "tie leaves the two items level" {
+  let ranker = IndexedRanker::new(2)
+  ignore(ranker.update_single_query(0, 1, Tie))
+  inspect(ranker.get_rank_for(0).unwrap(), content="1")
+  inspect(ranker.get_rank_for(1).unwrap(), content="2")
+}
+
+///|
+test "add_ranking copies its argument" {
+  let ranker = IndexedRanker::new(4)
+  let buffer = [0, 1, 2, 3]
+  ignore(ranker.add_ranking(buffer))
+  // The web glue reuses one pending buffer across submissions; if the ranker
+  // aliased it, clearing the buffer would erase the recorded event and the
+  // bootstrap would report zero-width intervals.
+  buffer.clear()
+  inspect(ranker.compute_uncertainty(50, 20, 2), content="true")
+  let width = ranker.get_uncertainty_width_for(0) +
+    ranker.get_uncertainty_width_for(1) +
+    ranker.get_uncertainty_width_for(2) +
+    ranker.get_uncertainty_width_for(3)
+  inspect(width > 0, content="true")
+}
+
+///|
+test "add_ranking rejects degenerate input" {
+  let ranker = IndexedRanker::new(3)
+  inspect(ranker.add_ranking([]), content="false")
+  inspect(ranker.add_ranking([1]), content="false")
+  inspect(ranker.add_ranking([0, 0]), content="false")
+  inspect(ranker.add_ranking([0, 3]), content="false")
+  inspect(ranker.total_comparisons(), content="0")
+}
+
+///|
+test "equal strengths rank by item index" {
+  let ranker = IndexedRanker::new(4)
+  // 0 beats 1 and 2 once each: 1 and 2 hold identical evidence, so they must
+  // keep a stable index order rather than an arbitrary sort order.
+  ignore(ranker.update_single_query(0, 1, AWins))
+  ignore(ranker.update_single_query(0, 2, AWins))
+  inspect(
+    ranker.get_rank_for(1).unwrap() < ranker.get_rank_for(2).unwrap(),
+    content="true",
+  )
+}
+
+///|
+test "compute_uncertainty refuses an empty event log" {
+  let ranker = IndexedRanker::new(4)
+  inspect(ranker.compute_uncertainty(50, 20, 2), content="false")
+  inspect(ranker.get_uncertainty_ready(), content="false")
+}
+
+///|
+test "displayed rank stays inside its own confidence interval" {
+  let ranker = IndexedRanker::new(5)
+  ignore(ranker.add_ranking([0, 1, 2, 3, 4]))
+  ignore(ranker.update_single_query(2, 1, AWins))
+  ignore(ranker.update_single_query(4, 3, AWins))
+  ignore(ranker.compute_uncertainty(200, 50, 3))
+  let mut inside = true
+  for i = 0; i < 5; i = i + 1 {
+    let rank = ranker.get_rank_for(i).unwrap()
+    if rank < ranker.get_rank_ci_low(i) || rank > ranker.get_rank_ci_high(i) {
+      inside = false
+    }
+  }
+  inspect(inside, content="true")
+}
+
+///|
+test "pl_fit_indexed matches the string-keyed wrapper" {
+  let item_to_idx = { "0": 0, "1": 1, "2": 2 }
+  let events : Array[RankingEvent] = [
+    RankingEvent::{ items: ["0", "1", "2"] },
+    RankingEvent::{ items: ["1", "0"] },
+  ]
+  let via_strings = pl_fit(3, events, [0.0, 0.0, 0.0], item_to_idx)
+  let via_indices = pl_fit_indexed(3, [[0, 1, 2], [1, 0]], [0.0, 0.0, 0.0])
+  let mut same = via_strings.length() == via_indices.length()
+  for i = 0; i < via_indices.length(); i = i + 1 {
+    if via_strings[i] != via_indices[i] {
+      same = false
+    }
+  }
+  inspect(same, content="true")
 }

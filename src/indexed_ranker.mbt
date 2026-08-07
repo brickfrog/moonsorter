@@ -158,43 +158,79 @@ fn IndexedRanker::variance_proxy(
 }
 
 ///|
+/// Refit strengths from the full event log.
+///
+/// Two deliberate choices:
+///   - Cold start from zero, so the estimate is a pure function of the event
+///     log. Warm-starting from the previous fit leaves a residue of the order
+///     the questions were answered in, which shows up as an arbitrary ordering
+///     between items holding identical evidence.
+///   - `use_map` matches `compute_uncertainty`, so the point estimate and the
+///     bootstrap replicates come from the same estimator. Mixing them lets a
+///     displayed rank fall outside its own confidence interval.
 fn IndexedRanker::fit(self : IndexedRanker) -> Unit {
-  // Convert indexed events to RankingEvent (String-based) for pl_fit
-  // This is a bit inefficient, but keeps the solver unified.
-  // In a real high-performance app we'd have an indexed version of pl_fit.
-  let string_events : Array[RankingEvent] = []
+  let events : Array[Array[Int]] = []
   for event in self.events {
-    let items : Array[String] = []
-    for idx in event.items {
-      items.push(idx.to_string())
+    if event.items.length() >= 2 {
+      events.push(event.items)
     }
-    string_events.push({ items, })
   }
-  let item_to_idx : Map[String, Int] = {}
-  for i = 0; i < self.n; i = i + 1 {
-    item_to_idx[i.to_string()] = i
-  }
-  self.strengths = pl_fit(self.n, string_events, self.strengths, item_to_idx)
+  self.strengths = pl_fit_indexed(
+    self.n,
+    events,
+    Array::make(self.n, 0.0),
+    use_map=true,
+  )
 }
 
 ///|
-/// Add a ranking event (indices).
+/// Snapshot the current state so `undo_last` can restore it.
+fn IndexedRanker::push_history(self : IndexedRanker) -> Unit {
+  self.history.push({
+    strengths: self.strengths.copy(),
+    events: self.events.copy(),
+    iteration_count: self.iteration_count,
+  })
+}
+
+///|
+/// Reject a ranking that names an out-of-range or repeated item.
+fn IndexedRanker::valid_ranking(
+  self : IndexedRanker,
+  ranking : Array[Int],
+) -> Bool {
+  let len = ranking.length()
+  if len < 2 {
+    return false
+  }
+  for i = 0; i < len; i = i + 1 {
+    let idx = ranking[i]
+    if idx < 0 || idx >= self.n {
+      return false
+    }
+    for j = i + 1; j < len; j = j + 1 {
+      if ranking[j] == idx {
+        return false
+      }
+    }
+  }
+  true
+}
+
+///|
+/// Add a ranking event: item indices ordered best to worst.
+///
+/// Counts as one comparison and one undo step.
 pub fn IndexedRanker::add_ranking(
   self : IndexedRanker,
   ranking : Array[Int],
 ) -> Bool {
-  for idx in ranking {
-    if idx < 0 || idx >= self.n {
-      return false
-    }
+  if !self.valid_ranking(ranking) {
+    return false
   }
-  let entry : IndexedHistoryEntry = {
-    strengths: self.strengths.copy(),
-    events: self.events.copy(),
-    iteration_count: self.iteration_count,
-  }
-  self.history.push(entry)
-  self.events.push({ items: ranking })
+  self.push_history()
+  // Copy: the caller keeps ownership of `ranking` and may reuse the buffer.
+  self.events.push({ items: ranking.copy() })
   self.iteration_count = self.iteration_count + 1
   self.uncertainty_ready = false
   self.fit()
@@ -202,6 +238,10 @@ pub fn IndexedRanker::add_ranking(
 }
 
 ///|
+/// Record one pairwise decision.
+///
+/// A tie contributes both orderings to the model but still counts as a single
+/// comparison and a single undo step.
 pub fn IndexedRanker::update_single_query(
   self : IndexedRanker,
   index_a : Int,
@@ -215,16 +255,19 @@ pub fn IndexedRanker::update_single_query(
     index_a == index_b {
     return false
   }
-  let ranking = match result {
-    AWins => [index_a, index_b]
-    BWins => [index_b, index_a]
+  self.push_history()
+  match result {
+    AWins => self.events.push({ items: [index_a, index_b] })
+    BWins => self.events.push({ items: [index_b, index_a] })
     Tie => {
-      ignore(self.add_ranking([index_a, index_b]))
-      ignore(self.add_ranking([index_b, index_a]))
-      return true
+      self.events.push({ items: [index_a, index_b] })
+      self.events.push({ items: [index_b, index_a] })
     }
   }
-  self.add_ranking(ranking)
+  self.iteration_count = self.iteration_count + 1
+  self.uncertainty_ready = false
+  self.fit()
+  true
 }
 
 ///|
@@ -242,24 +285,10 @@ pub fn IndexedRanker::undo_last(self : IndexedRanker) -> Bool {
 }
 
 ///|
-pub fn IndexedRanker::compute_ordinal_ranks(self : IndexedRanker) -> Array[Int] {
-  if self.n == 0 {
-    return []
-  }
-  let indexed : Array[(Int, Double)] = Array::make(self.n, (0, 0.0))
-  for i = 0; i < self.n; i = i + 1 {
-    indexed[i] = (i, self.strengths[i])
-  }
-  indexed.sort_by(fn(a, b) { b.1.compare(a.1) })
-  let ranks : Array[Int] = Array::make(self.n, 0)
-  for rank = 0; rank < self.n; rank = rank + 1 {
-    let idx = indexed[rank].0
-    ranks[idx] = rank + 1
-  }
-  ranks
-}
-
-///|
+/// Ordinal ranks (1 = strongest) keyed by item index.
+///
+/// Equal strengths break by item index so the displayed order is stable
+/// across refits instead of following an unspecified sort order.
 fn compute_ranks_from_strengths(strengths : Array[Double]) -> Array[Int] {
   let n = strengths.length()
   if n == 0 {
@@ -269,13 +298,24 @@ fn compute_ranks_from_strengths(strengths : Array[Double]) -> Array[Int] {
   for i = 0; i < n; i = i + 1 {
     indexed[i] = (i, strengths[i])
   }
-  indexed.sort_by(fn(a, b) { b.1.compare(a.1) })
+  indexed.sort_by(fn(a, b) {
+    let by_strength = b.1.compare(a.1)
+    if by_strength != 0 {
+      by_strength
+    } else {
+      a.0.compare(b.0)
+    }
+  })
   let ranks : Array[Int] = Array::make(n, 0)
   for rank = 0; rank < n; rank = rank + 1 {
-    let idx = indexed[rank].0
-    ranks[idx] = rank + 1
+    ranks[indexed[rank].0] = rank + 1
   }
   ranks
+}
+
+///|
+pub fn IndexedRanker::compute_ordinal_ranks(self : IndexedRanker) -> Array[Int] {
+  compute_ranks_from_strengths(self.strengths)
 }
 
 ///|
@@ -309,49 +349,58 @@ pub fn IndexedRanker::compute_uncertainty(
   for i = 0; i < self.n; i = i + 1 {
     gamma[i] = @math.exp(self.strengths[i])
   }
+  // Scratch buffers reused across every sample: `source_events` aliases the
+  // recorded orderings, `sample_events` receives each resampled ordering.
+  let source_events : Array[Array[Int]] = []
+  let sample_events : Array[Array[Int]] = []
+  for event in self.events {
+    if event.items.length() >= 2 {
+      source_events.push(event.items)
+      sample_events.push(Array::make(event.items.length(), 0))
+    }
+  }
+  if source_events.length() == 0 {
+    return false
+  }
+  let remaining : Array[Int] = []
   for sample = 0; sample < samples; sample = sample + 1 {
-    // Generate bootstrap events
-    let sample_events : Array[RankingEvent] = []
-    for event in self.events {
-      // For each original event, we sample a new one from the current model
-      let original_items = event.items
-      let new_items : Array[String] = []
-      let remaining = original_items.copy()
+    // Resample each observed event from the fitted model (parametric
+    // bootstrap): repeatedly draw a winner from the remaining items with
+    // probability proportional to gamma.
+    for e = 0; e < source_events.length(); e = e + 1 {
+      let source = source_events[e]
+      let target = sample_events[e]
+      remaining.clear()
+      for idx in source {
+        remaining.push(idx)
+      }
+      let mut total_gamma = 0.0
+      for idx in remaining {
+        total_gamma = total_gamma + gamma[idx]
+      }
+      let mut pos = 0
       while remaining.length() > 0 {
-        let mut total_gamma = 0.0
-        for idx in remaining {
-          total_gamma = total_gamma + gamma[idx]
-        }
         let r = self.next_random_double() * total_gamma
         let mut running_sum = 0.0
-        let mut winner_idx_in_remaining = -1
+        let mut winner_slot = remaining.length() - 1
         for j = 0; j < remaining.length(); j = j + 1 {
           running_sum = running_sum + gamma[remaining[j]]
           if r <= running_sum {
-            winner_idx_in_remaining = j
+            winner_slot = j
             break
           }
         }
-        if winner_idx_in_remaining != -1 {
-          let winner = remaining[winner_idx_in_remaining]
-          new_items.push(winner.to_string())
-          let _ = remaining.remove(winner_idx_in_remaining)
-        } else {
-          // Should not happen, but for safety:
-          break
-        }
+        let winner = remaining[winner_slot]
+        target[pos] = winner
+        pos = pos + 1
+        total_gamma = total_gamma - gamma[winner]
+        let _ = remaining.remove(winner_slot)
       }
-      sample_events.push({ items: new_items })
     }
-    let item_to_idx : Map[String, Int] = {}
-    for i = 0; i < self.n; i = i + 1 {
-      item_to_idx[i.to_string()] = i
-    }
-    let fitted = pl_fit(
+    let fitted = pl_fit_indexed(
       self.n,
       sample_events,
       self.strengths,
-      item_to_idx,
       max_iter~,
       tolerance=1.0e-5,
       use_map=true,
@@ -366,6 +415,9 @@ pub fn IndexedRanker::compute_uncertainty(
       }
     }
   }
+  // 10th-90th percentile of the bootstrap rank distribution: an 80% interval.
+  // The UI labels it "Rank CI · 80%" (site/src/components/Rankings.astro);
+  // change both together.
   let lower_target = @math.ceil(samples.to_double() * 0.1).to_int()
   let upper_target = @math.ceil(samples.to_double() * 0.9).to_int()
   self.rank_ci_low = Array::make(self.n, 0)
@@ -605,72 +657,6 @@ pub fn IndexedRanker::get_random_pair(
     remaining = remaining - width
   }
   None
-}
-
-///|
-pub fn IndexedRanker::get_most_informative_pair(
-  self : IndexedRanker,
-) -> (Int, Int)? {
-  if self.n < 2 {
-    return None
-  }
-
-  // 1. Calculate item counts (proxy for information)
-  let counts : Array[Int] = Array::make(self.n, 0)
-  for event in self.events {
-    for idx in event.items {
-      counts[idx] = counts[idx] + 1
-    }
-  }
-
-  // 2. Compute individual uncertainties based on counts
-  let prior = self.uncertainty_prior
-  let uncertainty : Array[Double] = Array::make(self.n, 0.0)
-  for i = 0; i < self.n; i = i + 1 {
-    uncertainty[i] = 1.0 / (counts[i].to_double() + prior)
-  }
-
-  // 3. Get current ordinal ranks for global gap calculation
-  let ranks = self.compute_ordinal_ranks()
-  let mut best_score = -1.0
-  let mut best_i = 0
-  let mut best_j = 1
-  for i = 0; i < self.n; i = i + 1 {
-    for j = i + 1; j < self.n; j = j + 1 {
-      // Bradley-Terry probability of i beating j
-      // p_ij = 1 / (1 + exp(-(s_i - s_j)))
-      let diff = self.strengths[i] - self.strengths[j]
-      let p_ij = 1.0 / (1.0 + @math.exp(-diff))
-
-      // Expected Information Gain (EIG) proxy: p * (1-p)
-      // This is maximized at p=0.5 (close strength).
-      let eig = p_ij * (1.0 - p_ij)
-
-      // Combine uncertainties
-
-      // Rank gap bonus (normalized 0 to 1) 
-      // Encourages occasionally checking items far apart in current rank
-      let gap = (ranks[i] - ranks[j]).abs().to_double() / self.n.to_double()
-
-      // Jitter for variety (seed based on internal rng)
-      let jitter = self.next_random_double() * 0.01
-
-      // Combined score:
-      // - 1.0 / (counts[i]+1) + 1.0 / (counts[j]+1): Strong pressure for 
-      //   coverage (at least 2-3 comparisons per item).
-      // - eig * 0.5: Influence of "informational" ties.
-      // - gap * 0.5: Significant pressure for global verification.
-      // - jitter: Variety.
-      let coverage = uncertainty[i] + uncertainty[j]
-      let score = coverage * 2.0 + eig * 0.5 + gap * 0.5 + jitter
-      if score > best_score {
-        best_score = score
-        best_i = i
-        best_j = j
-      }
-    }
-  }
-  Some((best_i, best_j))
 }
 
 ///|

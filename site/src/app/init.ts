@@ -23,6 +23,11 @@ export function initFlow() {
       useScorePrior: false,
       importMode: 'all',
       sliceCount: demoItems.length,
+    }).catch((error) => {
+      setStatus(
+        dom.importStatus,
+        error instanceof Error ? error.message : 'Failed to start the demo.',
+      );
     });
     state.currentFilters = {};
   } else if (importParam === 'csv') {
