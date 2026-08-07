@@ -21,7 +21,7 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
         <span class="compare-card-seed" data-choice-seed="A"></span>
       </div>
       <div class="compare-card-poster" data-choice-poster="A">
-        <img class="compare-card-cover hidden" data-choice-cover="A" alt="" loading="lazy" />
+        <img class="compare-card-cover hidden" data-choice-cover="A" alt="Cover art for the left option" loading="lazy" />
         <span class="compare-card-poster-label">&lt; poster ·<br /><span data-choice-title-label="A">{left}</span> &gt;</span>
       </div>
       <div class="compare-card-foot">
@@ -51,7 +51,7 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
         <span class="compare-card-seed" data-choice-seed="B"></span>
       </div>
       <div class="compare-card-poster" data-choice-poster="B">
-        <img class="compare-card-cover hidden" data-choice-cover="B" alt="" loading="lazy" />
+        <img class="compare-card-cover hidden" data-choice-cover="B" alt="Cover art for the right option" loading="lazy" />
         <span class="compare-card-poster-label">&lt; poster ·<br /><span data-choice-title-label="B">{right}</span> &gt;</span>
       </div>
       <div class="compare-card-foot">
@@ -65,7 +65,15 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
   </div>
 
   <div class="compare-progress-row" data-progress>
-    <div class="progress-track">
+    <div
+      class="progress-track"
+      data-progress-track
+      role="progressbar"
+      aria-label="Comparison progress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+    >
       <div class="progress-fill" data-progress-fill></div>
     </div>
     <p class="compare-progress-meta" data-progress-meta>

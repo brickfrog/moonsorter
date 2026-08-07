@@ -111,4 +111,11 @@ export function resetState() {
   state.modeChosen = false;
   state.analysisComputedAt = null;
   state.earlyFinishWarned = false;
+  // Left stale before: the old ranker kept answering get_progress_*, and the
+  // results table kept the previous session's sort.
+  state.wasm = null;
+  state.currentPair = null;
+  state.focusPair = null;
+  state.sortColumn = null;
+  state.sortDirection = 'asc';
 }

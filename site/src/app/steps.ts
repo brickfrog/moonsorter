@@ -39,6 +39,13 @@ export function updateStepper(active: keyof Steps) {
       (target === 'results' && canShowResults());
     button.disabled = !enabled;
     button.classList.toggle('is-active', target === activeKey);
+    // The stepper is a progress indicator, not a tab set; aria-current tells
+    // assistive tech which step you are on without faking tab semantics.
+    if (target === activeKey) {
+      button.setAttribute('aria-current', 'step');
+    } else {
+      button.removeAttribute('aria-current');
+    }
   });
 }
 

@@ -30,13 +30,25 @@ const baseUrl = import.meta.env.BASE_URL;
         <button class="btn-secondary" type="button" data-action="clear">
           Clear saved session
         </button>
+        <label class="btn-secondary session-import">
+          Load .session file
+          <input
+            class="visually-hidden"
+            type="file"
+            accept=".session,application/json"
+            data-session-file
+          />
+        </label>
       </div>
-      <p class="text-xs text-latte-subtext0" data-session-status></p>
+      <p class="text-xs text-latte-subtext0" data-session-status role="status" aria-live="polite"></p>
     </div>
   </section>
 
   <section class="card stepper">
-    <div class="stepper-track" role="tablist" aria-label="Ranking steps">
+    <!-- A stepper is a progress indicator, not a tab set: the buttons control
+         which section is shown but there are no tabpanels. `aria-current` on
+         the active step conveys position without inventing tab semantics. -->
+    <nav class="stepper-track" aria-label="Ranking steps">
       <button class="stepper-item" type="button" data-step-target="connect">
         <span class="stepper-number">1</span>
         <span class="stepper-label">Connect</span>
@@ -57,8 +69,8 @@ const baseUrl = import.meta.env.BASE_URL;
         <span class="stepper-number">5</span>
         <span class="stepper-label">Results</span>
       </button>
-    </div>
-    <p class="text-xs text-latte-subtext0" data-stepper-status></p>
+    </nav>
+    <p class="text-xs text-latte-subtext0" data-stepper-status role="status" aria-live="polite"></p>
   </section>
 
   <section class="card rank-loading" data-rank-loading>
@@ -92,7 +104,7 @@ const baseUrl = import.meta.env.BASE_URL;
         Use demo list
       </button>
     </div>
-    <p class="text-xs text-latte-subtext0" data-connect-status></p>
+    <p class="text-xs text-latte-subtext0" data-connect-status role="status" aria-live="polite"></p>
   </section>
 
   <section class="card hidden" data-step="import">
@@ -227,7 +239,7 @@ const baseUrl = import.meta.env.BASE_URL;
         Back
       </button>
     </div>
-    <p class="text-xs text-latte-subtext0 mt-3" data-import-status></p>
+    <p class="text-xs text-latte-subtext0 mt-3" data-import-status role="status" aria-live="polite"></p>
   </section>
 
   <section class="card hidden" data-step="mode">
@@ -352,10 +364,17 @@ const baseUrl = import.meta.env.BASE_URL;
   </section>
 
   <!-- Early finish warning modal -->
-  <div class="modal-overlay hidden" data-early-finish-modal>
+  <div
+    class="modal-overlay hidden"
+    data-early-finish-modal
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="early-finish-title"
+    aria-describedby="early-finish-message"
+  >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2">Results may be unreliable</h3>
-      <p class="text-sm text-latte-subtext1 mb-4" data-early-finish-message>
+      <h3 class="text-lg font-display mb-2" id="early-finish-title">Results may be unreliable</h3>
+      <p class="text-sm text-latte-subtext1 mb-4" id="early-finish-message" data-early-finish-message>
         <!-- Message will be filled by JS -->
       </p>
       <div class="flex gap-3">
@@ -370,10 +389,17 @@ const baseUrl = import.meta.env.BASE_URL;
   </div>
 
   <!-- Start over confirmation modal -->
-  <div class="modal-overlay hidden" data-start-over-modal>
+  <div
+    class="modal-overlay hidden"
+    data-start-over-modal
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="start-over-title"
+    aria-describedby="start-over-message"
+  >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2">Start over?</h3>
-      <p class="text-sm text-latte-subtext1 mb-4">
+      <h3 class="text-lg font-display mb-2" id="start-over-title">Start over?</h3>
+      <p class="text-sm text-latte-subtext1 mb-4" id="start-over-message">
         This will clear all comparisons and rankings. This cannot be undone.
       </p>
       <div class="flex gap-3">

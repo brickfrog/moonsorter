@@ -1,4 +1,5 @@
 import { setStatus } from '../lib/utils';
+import { openModal } from './modal';
 import { dom } from './dom';
 import { state } from './state';
 import { showResults } from './results';
@@ -57,7 +58,7 @@ export function handleFinish() {
     if (dom.earlyFinishModal && dom.earlyFinishMessage) {
       dom.earlyFinishMessage.textContent = `Only ${pct}% complete (${completed} of ~${estimated} comparisons). ` +
         `Results may be unreliable with this few comparisons.`;
-      dom.earlyFinishModal.classList.remove('hidden');
+      openModal(dom.earlyFinishModal);
       return;
     }
   }

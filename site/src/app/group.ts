@@ -29,6 +29,58 @@ export function updateModeUI() {
   }
 }
 
+function renumberRankBadges(container: Element) {
+  container.querySelectorAll('.rank-badge').forEach((badge, i) => {
+    badge.textContent = (i + 1).toString();
+  });
+}
+
+/** Moves `item` one slot up (-1) or down (+1); no-op at the edges of the list. */
+function moveSortItem(container: Element, item: HTMLElement, delta: number) {
+  const items = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item'));
+  const from = items.indexOf(item);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= items.length) return;
+
+  const neighbour = items[to];
+  container.insertBefore(item, delta < 0 ? neighbour : neighbour.nextSibling);
+  renumberRankBadges(container);
+  // Re-inserting a node drops focus, so restore it on the item the user moved.
+  item.focus();
+
+  const title = item.querySelector('.item-title')?.textContent ?? 'Title';
+  setStatus(
+    document.querySelector('[data-sort-group-live]'),
+    `${title} moved to position ${to + 1} of ${items.length}`,
+  );
+}
+
+function handleSortKeydown(container: Element, event: KeyboardEvent) {
+  const source = event.target;
+  if (!(source instanceof HTMLElement)) return;
+  const item = source.closest<HTMLElement>('.sortable-item');
+  if (!item || item.parentElement !== container) return;
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    event.preventDefault();
+    const delta = event.key === 'ArrowUp' ? -1 : 1;
+    if (event.altKey || event.ctrlKey) {
+      moveSortItem(container, item, delta);
+      return;
+    }
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item'));
+    items[items.indexOf(item) + delta]?.focus();
+    return;
+  }
+
+  if (event.key === 'Home' || event.key === 'End') {
+    event.preventDefault();
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item'));
+    const edge = event.key === 'Home' ? items[0] : items[items.length - 1];
+    edge?.focus();
+  }
+}
+
 export function renderSortGroup() {
   const container = dom.sortableList;
   if (!container || !state.currentGroup) return;
@@ -41,6 +93,9 @@ export function renderSortGroup() {
     const li = document.createElement('li');
     li.className = 'sortable-item';
     li.draggable = true;
+    li.tabIndex = 0;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
     li.dataset.index = idx.toString();
 
     const badge = document.createElement('div');
@@ -54,6 +109,7 @@ export function renderSortGroup() {
 
     const handle = document.createElement('div');
     handle.className = 'drag-handle';
+    handle.setAttribute('aria-hidden', 'true');
     handle.innerHTML =
       '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
 
@@ -78,10 +134,10 @@ export function renderSortGroup() {
     });
     container.insertBefore(draggingItem, nextSibling || null);
 
-    container.querySelectorAll('.rank-badge').forEach((badge, i) => {
-      badge.textContent = (i + 1).toString();
-    });
+    renumberRankBadges(container);
   };
+
+  container.onkeydown = (event) => handleSortKeydown(container, event);
 }
 
 export function startGroupSort() {

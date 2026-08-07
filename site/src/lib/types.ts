@@ -35,6 +35,8 @@ export type ScoreConfig = { max: number; step: number; label: string };
 export type ScoreRange = { min: number; max: number };
 
 export type SavedState = {
+  /** Session format version; absent in files written before versioning. */
+  version?: number;
   items: Entry[];
   comparisons: RankingHistoryEntry[];
   priorComparisons: RankingHistoryEntry[];

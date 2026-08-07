@@ -189,14 +189,22 @@ export function renderResultsTable(payload: ResultsPayload) {
     });
   }
 
-  // Update sort indicators
-  document.querySelectorAll('[data-sort-indicator]').forEach(el => {
+  // Update sort indicators. The arrow glyph lives in the button's indicator
+  // span; aria-sort belongs on the owning th, which is what AT announces.
+  document.querySelectorAll('[data-sort-indicator]').forEach((el) => {
     el.textContent = '';
+    el.closest('th')?.setAttribute('aria-sort', 'none');
   });
   if (state.sortColumn) {
     const indicator = document.querySelector(`[data-sort-indicator="${state.sortColumn}"]`);
     if (indicator) {
       indicator.textContent = state.sortDirection === 'asc' ? ' \u25B2' : ' \u25BC';
+      indicator
+        .closest('th')
+        ?.setAttribute(
+          'aria-sort',
+          state.sortDirection === 'asc' ? 'ascending' : 'descending',
+        );
     }
   }
 

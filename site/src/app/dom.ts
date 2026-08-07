@@ -129,4 +129,7 @@ export const dom = {
 
   // Upload button
   uploadButton: query<HTMLButtonElement>('[data-action="upload"]'),
+
+  // Session import
+  sessionFile: query<HTMLInputElement>('[data-session-file]'),
 };

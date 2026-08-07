@@ -4,6 +4,8 @@ import { dom } from './dom';
 import { state, resetState } from './state';
 import { loadState, clearStoredState } from './storage';
 import { showStep } from './steps';
+import { openModal } from './modal';
+import { updateProgress } from './progress';
 import { startRanking } from './ranking';
 
 export function resumeSession(): boolean {
@@ -66,9 +68,8 @@ export function resumeSession(): boolean {
 }
 
 export function clearSession() {
-  const modal = dom.startOverModal;
-  if (modal) {
-    modal.classList.remove('hidden');
+  if (dom.startOverModal) {
+    openModal(dom.startOverModal);
   }
 }
 
@@ -79,5 +80,8 @@ export function performClearSession() {
     dom.analysisStatus.textContent = '';
   }
   setStatus(dom.sessionStatus, 'Session cleared.');
+  // resetState() drops the ranker, so the progress bar would otherwise keep
+  // showing the cleared session's counts.
+  updateProgress();
   showStep(getToken() ? 'import' : 'connect');
 }

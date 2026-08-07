@@ -13,8 +13,17 @@ import { setImportPath, applyModeSelection, enterActiveStep } from './mode';
 import { readMediaType } from './config';
 import { handleImport, handleCsvImport } from './import';
 import { resumeSession, clearSession, performClearSession } from './session';
-import { buildUploadPayload, downloadSession, downloadResults, downloadCsv } from './export';
+import {
+  buildUploadPayload,
+  downloadSession,
+  downloadResults,
+  downloadCsv,
+  loadSessionFile,
+  sessionStartOptions,
+} from './export';
 import { runAnalysis, handleFinish } from './analysis';
+import { startRanking } from './ranking';
+import { closeModal, isAnyModalOpen } from './modal';
 import { saveState } from './storage';
 import type { RankGoal, RankMode } from '../lib/types';
 
@@ -34,10 +43,7 @@ export function setupEvents() {
     if (dom.steps.compare?.classList.contains('hidden')) return;
     // A .modal-overlay is `fixed inset-0`, which blocks the pointer but not
     // the keyboard; without this the shortcuts keep firing behind a dialog.
-    const modalOpen = Array.from(
-      document.querySelectorAll('.modal-overlay'),
-    ).some((modal) => !modal.classList.contains('hidden'));
-    if (modalOpen) return;
+    if (isAnyModalOpen()) return;
     // Let focused controls (the tier-list checkbox, the action buttons) keep
     // their own Space/Enter behaviour.
     if (
@@ -188,7 +194,7 @@ export function setupEvents() {
   const cancelFinishButton = document.querySelector('[data-action="cancel-finish"]');
   if (cancelFinishButton) {
     cancelFinishButton.addEventListener('click', () => {
-      if (dom.earlyFinishModal) dom.earlyFinishModal.classList.add('hidden');
+      if (dom.earlyFinishModal) closeModal(dom.earlyFinishModal);
     });
   }
 
@@ -196,7 +202,7 @@ export function setupEvents() {
   const confirmFinishButton = document.querySelector('[data-action="confirm-finish"]');
   if (confirmFinishButton) {
     confirmFinishButton.addEventListener('click', () => {
-      if (dom.earlyFinishModal) dom.earlyFinishModal.classList.add('hidden');
+      if (dom.earlyFinishModal) closeModal(dom.earlyFinishModal);
       state.earlyFinishWarned = true;
       showResults();
     });
@@ -206,7 +212,7 @@ export function setupEvents() {
   const cancelStartOverButton = document.querySelector('[data-action="cancel-start-over"]');
   if (cancelStartOverButton) {
     cancelStartOverButton.addEventListener('click', () => {
-      if (dom.startOverModal) dom.startOverModal.classList.add('hidden');
+      if (dom.startOverModal) closeModal(dom.startOverModal);
     });
   }
 
@@ -214,14 +220,15 @@ export function setupEvents() {
   const confirmStartOverButton = document.querySelector('[data-action="confirm-start-over"]');
   if (confirmStartOverButton) {
     confirmStartOverButton.addEventListener('click', () => {
-      if (dom.startOverModal) dom.startOverModal.classList.add('hidden');
+      if (dom.startOverModal) closeModal(dom.startOverModal);
       performClearSession();
     });
   }
 
   // Upload button
-  if (dom.uploadButton) {
-    dom.uploadButton.addEventListener('click', async () => {
+  const uploadButton = dom.uploadButton;
+  if (uploadButton) {
+    uploadButton.addEventListener('click', async () => {
       const token = getToken();
       if (!token) {
         setStatus(dom.connectStatus, 'Connect to AniList first.');
@@ -232,16 +239,26 @@ export function setupEvents() {
         setStatus(dom.importStatus, 'Nothing selected to upload yet.');
         return;
       }
-      dom.uploadButton!.textContent = 'Uploading...';
+      uploadButton.disabled = true;
+      uploadButton.textContent = `Uploading 0/${updates.length}...`;
       try {
-        await updateScores(token, updates);
-        dom.uploadButton!.textContent = 'Uploaded!';
+        // Paced by updateScores to stay under the AniList rate limit, so a
+        // large list takes minutes; report progress rather than looking hung.
+        await updateScores(token, updates, {
+          onProgress: (done, total) => {
+            uploadButton.textContent = `Uploading ${done}/${total}...`;
+          },
+        });
+        uploadButton.textContent = 'Uploaded!';
+        setStatus(dom.importStatus, `Uploaded ${updates.length} scores.`);
       } catch (error) {
-        dom.uploadButton!.textContent = 'Upload selected';
+        uploadButton.textContent = 'Upload selected';
         setStatus(
           dom.importStatus,
           error instanceof Error ? error.message : 'Upload failed.',
         );
+      } finally {
+        uploadButton.disabled = false;
       }
     });
   }
@@ -262,6 +279,34 @@ export function setupEvents() {
   const downloadSessionButton = document.querySelector('[data-action="download-session"]');
   if (downloadSessionButton) {
     downloadSessionButton.addEventListener('click', downloadSession);
+  }
+
+  // Load a downloaded .session file back in
+  const sessionFile = dom.sessionFile;
+  if (sessionFile) {
+    sessionFile.addEventListener('change', async () => {
+      const file = sessionFile.files?.[0];
+      if (!file) return;
+      // Allow re-picking the same file after a failed load.
+      sessionFile.value = '';
+      const saved = loadSessionFile(await file.text());
+      if (!saved) {
+        setStatus(dom.sessionStatus, 'That file is not a valid session.');
+        return;
+      }
+      try {
+        await startRanking(sessionStartOptions(saved));
+        if (dom.optInTierList && saved.optInTierList !== undefined) {
+          dom.optInTierList.checked = saved.optInTierList;
+        }
+        setStatus(dom.sessionStatus, `Loaded ${saved.items.length} titles from file.`);
+      } catch (error) {
+        setStatus(
+          dom.sessionStatus,
+          error instanceof Error ? error.message : 'Could not load that session.',
+        );
+      }
+    });
   }
 
   // Select all button

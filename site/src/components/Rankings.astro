@@ -15,20 +15,32 @@ const { title = 'Results' } = Astro.props;
       <div class="results-table-actions">
         <button class="btn-secondary" type="button" data-action="select-all">Select all</button>
         <button class="btn-secondary" type="button" data-action="select-none">Select none</button>
-        <span class="status-slot" data-selection-status></span>
+        <span class="status-slot" role="status" aria-live="polite" data-selection-status></span>
       </div>
 
       <div class="rankings overflow-x-auto" data-rankings>
         <table class="results-table">
           <thead>
             <tr>
-              <th class="col-check"></th>
-              <th class="col-rank cursor-pointer" data-sort="rank">Rank <span data-sort-indicator="rank"></span></th>
-              <th class="col-title cursor-pointer" data-sort="title">Title <span data-sort-indicator="title"></span></th>
-              <th class="col-score cursor-pointer" data-sort="originalScore">Original <span data-sort-indicator="originalScore"></span></th>
-              <th class="col-score cursor-pointer" data-sort="newScore">New <span data-sort-indicator="newScore"></span></th>
-              <th class="col-ci cursor-pointer" data-sort="rankCI">Rank CI · 80% <span data-sort-indicator="rankCI"></span></th>
-              <th class="col-topk cursor-pointer" data-sort="topKConfidence">Top-K <span data-sort-indicator="topKConfidence"></span></th>
+              <th class="col-check"><span class="visually-hidden">Select</span></th>
+              <th class="col-rank" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="rank">Rank <span data-sort-indicator="rank"></span></button>
+              </th>
+              <th class="col-title" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="title">Title <span data-sort-indicator="title"></span></button>
+              </th>
+              <th class="col-score" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="originalScore">Original <span data-sort-indicator="originalScore"></span></button>
+              </th>
+              <th class="col-score" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="newScore">New <span data-sort-indicator="newScore"></span></button>
+              </th>
+              <th class="col-ci" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="rankCI">Rank CI · 80% <span data-sort-indicator="rankCI"></span></button>
+              </th>
+              <th class="col-topk" aria-sort="none">
+                <button class="th-sort" type="button" data-sort="topKConfidence">Top-K <span data-sort-indicator="topKConfidence"></span></button>
+              </th>
             </tr>
           </thead>
           <tbody data-rankings-body></tbody>
@@ -58,7 +70,7 @@ const { title = 'Results' } = Astro.props;
         <button class="btn" type="button" data-action="run-analysis">
           Calculate confidence intervals
         </button>
-        <p class="status-slot" data-analysis-status></p>
+        <p class="status-slot" role="status" aria-live="polite" data-analysis-status></p>
       </div>
 
       <div class="sidebar-card hidden" data-analysis-summary>
@@ -124,3 +136,28 @@ const { title = 'Results' } = Astro.props;
     </aside>
   </div>
 </section>
+
+<style is:global>
+  /* The sortable headers are buttons so they are keyboard-reachable. These
+     rules strip the UA button chrome so the header row looks unchanged; the
+     inherited values come from `.results-table th` in global.css. */
+  .th-sort {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+
+  .th-sort:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+</style>

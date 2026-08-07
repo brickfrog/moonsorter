@@ -7,7 +7,18 @@
     Drag the titles into order. This gives the model a richer signal than a
     single A/B click.
   </p>
-  <ul class="sortable-list" data-sortable-list></ul>
+  <p class="mt-2 text-xs text-latte-subtext0">
+    Keyboard: focus a title, then use Arrow keys to move between titles and
+    Alt+Arrow (or Ctrl+Arrow) to move the title itself up or down.
+  </p>
+  <ul
+    class="sortable-list"
+    data-sortable-list
+    role="listbox"
+    aria-label="Titles to rank, best first"
+    aria-orientation="vertical"
+  ></ul>
+  <p class="visually-hidden" data-sort-group-live aria-live="polite"></p>
   <p class="mt-3 text-xs text-latte-subtext0" data-group-coverage>
     Coverage: 0 / 0 titles touched (0 remaining)
   </p>

@@ -41,14 +41,20 @@ export function updateGroupCoverage() {
   }
 }
 
-export function updateProgress() {
-  updateGroupCoverage();
-  if (!state.wasm || !dom.progressText || !dom.progressFill || !dom.progressMeta) return;
-  const completed = state.wasm.get_progress_completed();
-  const estimated = state.wasm.get_progress_estimated();
+function paintProgress(completed: number, estimated: number) {
+  if (!dom.progressText || !dom.progressFill || !dom.progressMeta) return;
   const pct =
     estimated > 0 ? Math.min(100, Math.round((completed / estimated) * 100)) : 0;
   dom.progressFill.style.width = `${pct}%`;
+
+  const track = document.querySelector('[data-progress-track]');
+  if (track) {
+    track.setAttribute('aria-valuenow', pct.toString());
+    track.setAttribute(
+      'aria-valuetext',
+      estimated > 0 ? `${completed} of ${estimated} comparisons` : 'No comparisons yet',
+    );
+  }
 
   // Color code based on completion percentage
   dom.progressFill.classList.remove('progress-low', 'progress-medium', 'progress-high');
@@ -67,4 +73,18 @@ export function updateProgress() {
   } else {
     dom.progressMeta.textContent = `Estimated total: ${estimated} comparisons`;
   }
+}
+
+export function updateProgress() {
+  updateGroupCoverage();
+  // No ranker (fresh load, or after "Start over"): render an explicit zero state
+  // instead of leaving the bar frozen at the previous session's width.
+  if (!state.wasm) {
+    paintProgress(0, 0);
+    return;
+  }
+  paintProgress(
+    state.wasm.get_progress_completed(),
+    state.wasm.get_progress_estimated(),
+  );
 }
