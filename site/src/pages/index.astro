@@ -4,10 +4,8 @@ import Comparison from '../components/Comparison.astro';
 import SortGroup from '../components/SortGroup.astro';
 import Rankings from '../components/Rankings.astro';
 import TierList from '../components/TierList.astro';
-
-const baseUrl = import.meta.env.BASE_URL;
 ---
-<Layout data-base-url={baseUrl}>
+<Layout>
   <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
     <div class="space-y-5">
       <div class="pill">Ranking session</div>

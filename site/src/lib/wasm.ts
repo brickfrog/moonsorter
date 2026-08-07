@@ -1,3 +1,5 @@
+import { withBase } from './utils';
+
 export type WasmExports = {
   create_ranker: (count: number) => boolean;
   add_comparison: (indexA: number, indexB: number, result: number) => boolean;
@@ -170,8 +172,7 @@ function wrapExports(exports: RawExports): WasmExports {
 
 export async function loadWasm(): Promise<WasmExports> {
   if (wasm) return wasm;
-  const base = import.meta.env.BASE_URL || '';
-  const response = await fetch(`${base}moonsorter.wasm`);
+  const response = await fetch(withBase('moonsorter.wasm'));
   if (!response.ok) {
     throw new Error(`Failed to load WASM: ${response.status}`);
   }

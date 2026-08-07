@@ -37,3 +37,18 @@ export function suggestTopK(total: number, importMode: string, sliceCount: numbe
   if (total <= 100) return 15;
   return 20;
 }
+
+/**
+ * Join a site-root-relative path onto Astro's base path.
+ *
+ * `import.meta.env.BASE_URL` mirrors `base` in astro.config.mjs verbatim: ''
+ * locally and '/moonsorter' -- with NO trailing slash -- on GitHub Pages.
+ * Interpolating it directly yields '/moonsortermoonsorter.wasm'; adding a
+ * slash unconditionally yields '//moonsorter.wasm', which the browser reads as
+ * scheme-relative and tries to DNS-resolve. Both of those have shipped.
+ * Normalise both sides instead of trusting either to carry the separator.
+ */
+export function withBase(path = ''): string {
+  const base = (import.meta.env.BASE_URL ?? '').replace(/\/+$/, '');
+  return `${base}/${path.replace(/^\/+/, '')}`;
+}

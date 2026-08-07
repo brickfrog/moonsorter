@@ -1,11 +1,16 @@
 ---
 import '../styles/global.css';
 
+import { withBase } from '../lib/utils';
+
 const {
   title = 'Moonsorter',
   description = 'Pairwise ranking for AniList via MoonBit and WASM.',
-  'data-base-url': dataBaseUrl = '',
 } = Astro.props;
+
+// One normalised source of truth. Pages used to thread a raw `data-base-url`
+// prop in, which is how an unnormalised base reached two href templates.
+const baseUrl = withBase();
 ---
 <!doctype html>
 <html lang="en">
@@ -45,7 +50,7 @@ const {
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
-    <link rel="icon" type="image/png" href={`${dataBaseUrl}favicon.png`} />
+    <link rel="icon" type="image/png" href={withBase('favicon.png')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -53,10 +58,10 @@ const {
       rel="stylesheet"
     />
   </head>
-  <body data-base-url={dataBaseUrl}>
+  <body data-base-url={baseUrl}>
     <div class="site-container">
       <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
-        <a href={dataBaseUrl || '/'} class="flex items-center gap-4">
+        <a href={baseUrl} class="flex items-center gap-4">
           <div class="moon-mark" aria-hidden="true"></div>
           <h1 class="font-display text-4xl md:text-5xl">Moonsorter</h1>
         </a>
