@@ -1,3 +1,4 @@
+import { setStatus } from '../lib/utils';
 import { dom } from './dom';
 import { state } from './state';
 import type { ResultsPayload, ResultRow } from '../lib/types';
@@ -53,7 +54,13 @@ export function renderTierList(payload: ResultsPayload) {
 
       const img = document.createElement('img');
       img.alt = item.title;
-      img.loading = 'lazy';
+      // Both of these exist for the PNG export and must be set before `src`.
+      // `crossOrigin` makes the very first fetch a CORS request so the canvas
+      // is never tainted. Setting it later cannot work: the browser reuses the
+      // cached non-CORS response for the re-request and the load simply fails,
+      // which is how every cover silently vanished from the exported image.
+      // `loading="lazy"` would leave off-screen tiers blank in the capture.
+      img.crossOrigin = 'anonymous';
 
       if (item.coverImage) {
         img.src = item.coverImage;
@@ -108,20 +115,11 @@ export async function downloadTierListImage() {
   const originalText = downloadButton.textContent;
   downloadButton.textContent = 'Generating...';
   downloadButton.setAttribute('disabled', 'true');
+  setStatus(dom.tierStatus, '');
 
-  // The build is static, so there is no image proxy to route through. The
-  // AniList CDN sends `Access-Control-Allow-Origin: *`, so re-requesting each
-  // cover with crossOrigin set is enough to keep the canvas untainted.
+  // Covers are already CORS-clean: `renderTierList` sets `crossOrigin` before
+  // `src`, so the canvas is untainted and there is nothing to swap here.
   const imgs = Array.from(container.querySelectorAll('img'));
-  const originalSrcs = new Map<HTMLImageElement, string>();
-
-  imgs.forEach((img) => {
-    if (img.src && !img.src.startsWith(window.location.origin)) {
-      originalSrcs.set(img, img.src);
-      img.crossOrigin = 'anonymous';
-      img.src = img.src;
-    }
-  });
 
   try {
     // Only pull the ~194 KB renderer when someone actually exports. Nothing
@@ -161,18 +159,9 @@ export async function downloadTierListImage() {
     downloadButton.textContent = 'Saved!';
   } catch (error) {
     console.error('[tierlist] Export failed', error);
-    alert('Export failed. Browser security still blocked the images. Manual screenshot is the safest bet!');
+    setStatus(dom.tierStatus, 'Tier list export failed. A manual screenshot is the reliable fallback.');
     downloadButton.textContent = 'Failed';
   } finally {
-    // Restore original sources
-    imgs.forEach(img => {
-      const original = originalSrcs.get(img);
-      if (original) {
-        img.src = original;
-        img.removeAttribute('crossOrigin');
-      }
-    });
-
     setTimeout(() => {
       downloadButton.textContent = originalText;
       downloadButton.removeAttribute('disabled');

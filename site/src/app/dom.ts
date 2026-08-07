@@ -75,6 +75,7 @@ export const dom = {
   // Tier list
   tierList: query('[data-tier-list]'),
   tierContainer: query('.tier-container'),
+  tierStatus: query('[data-tierlist-status]'),
   tierTemplate: document.getElementById('tier-row-template') as HTMLTemplateElement | null,
 
   // Form inputs

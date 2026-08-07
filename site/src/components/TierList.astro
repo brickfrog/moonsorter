@@ -19,10 +19,11 @@
     <!-- Tiers will be injected here -->
   </div>
 
-  <div class="mt-6 flex justify-center">
+  <div class="mt-6 flex flex-col items-center gap-2">
     <button class="btn" type="button" data-action="download-tierlist" title="Captures tier list at current viewport width">
       📷 Download Tier List
     </button>
+    <p class="status-slot" role="status" aria-live="polite" data-tierlist-status></p>
   </div>
 
   <template id="tier-row-template">
