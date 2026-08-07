@@ -11,6 +11,36 @@ const {
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    {/*
+      Production only: `astro dev` serves its HMR client as an inline script,
+      which `script-src 'self'` blocks — that breaks hot reload and teaches you
+      to ignore console CSP errors. The shipped build emits zero inline
+      <script>, so the policy costs nothing there.
+
+      Must stay directly after <meta charset>: a meta CSP only governs
+      resources the parser reaches after it. GitHub Pages cannot set headers,
+      so this is the only delivery mechanism available; `frame-ancestors`,
+      `report-uri` and `sandbox` are header-only and are silently ignored here.
+
+      'wasm-unsafe-eval' is required or WebAssembly.instantiate is blocked,
+      which would take the ranker with it. style-src needs 'unsafe-inline' for
+      Astro's scoped <style> block; hashing it would silently break the page on
+      any style edit.
+    */}
+    {import.meta.env.PROD && (
+      <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' 'wasm-unsafe-eval';
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                 font-src https://fonts.gstatic.com;
+                 img-src 'self' data: blob: https://*.anilist.co;
+                 connect-src 'self' https://graphql.anilist.co;
+                 object-src 'none';
+                 base-uri 'none';
+                 form-action 'none'"
+      />
+    )}
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />

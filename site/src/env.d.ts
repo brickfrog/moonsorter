@@ -8,20 +8,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-type Html2CanvasOptions = {
-  useCORS?: boolean;
-  allowTaint?: boolean;
-  backgroundColor?: string;
-  scale?: number;
-  logging?: boolean;
-};
-
-/** Loaded from a CDN <script> tag in components/TierList.astro. */
-declare const html2canvas:
-  | ((element: HTMLElement, options?: Html2CanvasOptions) => Promise<HTMLCanvasElement>)
-  | undefined;
-
-interface Window {
-  html2canvas?: typeof html2canvas;
-}

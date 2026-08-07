@@ -113,7 +113,11 @@ const baseUrl = import.meta.env.BASE_URL;
     <p class="text-sm text-latte-subtext1 mb-4" data-import-desc>
       Pull your AniList items or upload a CSV, then choose how much to rank now.
     </p>
-    <form class="grid gap-4 md:grid-cols-2">
+    <!-- A plain grid, not a form: these controls are read by the import
+         buttons below and there is nothing to submit. As a <form> it had no
+         action, so an implicit submission would GET-navigate to `?` and wipe
+         the session; only the field count was suppressing that. -->
+    <div class="grid gap-4 md:grid-cols-2">
       <!-- CSV-only: file input -->
       <label class="col-span-full" data-import-path="csv">
         CSV file (columns: title, score, media_id optional)
@@ -224,7 +228,7 @@ const baseUrl = import.meta.env.BASE_URL;
           </label>
         </div>
       </details>
-    </form>
+    </div>
     <div class="mt-4 flex flex-wrap gap-3">
       <button class="btn" type="button" data-action="import" data-import-path="anilist">
         Import from AniList

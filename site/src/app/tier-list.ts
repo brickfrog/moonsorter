@@ -124,10 +124,9 @@ export async function downloadTierListImage() {
   });
 
   try {
-    const h2c = window.html2canvas;
-    if (!h2c) {
-      throw new Error('html2canvas not loaded');
-    }
+    // Only pull the ~194 KB renderer when someone actually exports. Nothing
+    // else in the app needs it, and most sessions never click this button.
+    const h2cPromise = import('html2canvas');
 
     // Give the re-requested images a chance to resolve from cache.
     await Promise.all(
@@ -140,6 +139,8 @@ export async function downloadTierListImage() {
             }),
       ),
     );
+
+    const { default: h2c } = await h2cPromise;
 
     const canvas = await h2c(container, {
       useCORS: true,
