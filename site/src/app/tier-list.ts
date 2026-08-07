@@ -113,9 +113,9 @@ export async function downloadTierListImage() {
   if (!downloadButton) return;
 
   const originalText = downloadButton.textContent;
-  downloadButton.textContent = 'Generating...';
+  downloadButton.textContent = 'Working';
   downloadButton.setAttribute('disabled', 'true');
-  setStatus(dom.tierStatus, '');
+  setStatus(dom.tierStatus, 'Moonsorter makes the tier list image.');
 
   // Covers are already CORS-clean: `renderTierList` sets `crossOrigin` before
   // `src`, so the canvas is untainted and there is nothing to swap here.
@@ -156,10 +156,11 @@ export async function downloadTierListImage() {
     link.click();
     document.body.removeChild(link);
 
-    downloadButton.textContent = 'Saved!';
+    setStatus(dom.tierStatus, 'Moonsorter saved the tier list image.');
+    downloadButton.textContent = 'Saved';
   } catch (error) {
     console.error('[tierlist] Export failed', error);
-    setStatus(dom.tierStatus, 'Tier list export failed. A manual screenshot is the reliable fallback.');
+    setStatus(dom.tierStatus, 'The tier list export failed. Make a screenshot of the tier list.');
     downloadButton.textContent = 'Failed';
   } finally {
     setTimeout(() => {

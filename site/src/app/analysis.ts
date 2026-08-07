@@ -25,7 +25,7 @@ export function runAnalysis() {
   state.analysisTopK = parseIntInput(dom.analysisTopK?.value, state.analysisTopK, 1);
   state.analysisMaxIter = parseIntInput(dom.analysisMaxIter?.value, state.analysisMaxIter, 5);
   if (dom.analysisStatus) {
-    dom.analysisStatus.textContent = 'Running uncertainty analysis...';
+    dom.analysisStatus.textContent = 'Moonsorter runs the uncertainty analysis.';
   }
   state.wasm.set_sampling_seed(Date.now());
   const ok = state.wasm.compute_uncertainty(
@@ -35,13 +35,13 @@ export function runAnalysis() {
   );
   if (!ok) {
     if (dom.analysisStatus) {
-      dom.analysisStatus.textContent = 'Uncertainty analysis failed.';
+      dom.analysisStatus.textContent = 'The uncertainty analysis failed. Run the analysis again.';
     }
     return;
   }
   state.analysisComputedAt = new Date().toISOString();
   if (dom.analysisStatus) {
-    dom.analysisStatus.textContent = `Uncertainty ready (${state.analysisSamples} samples).`;
+    dom.analysisStatus.textContent = `The uncertainty analysis is complete (${state.analysisSamples} samples).`;
   }
   showResults();
 }
@@ -56,8 +56,8 @@ export function handleFinish() {
   if (completion < 0.3 && !state.earlyFinishWarned) {
     const pct = Math.round(completion * 100);
     if (dom.earlyFinishModal && dom.earlyFinishMessage) {
-      dom.earlyFinishMessage.textContent = `Only ${pct}% complete (${completed} of ~${estimated} comparisons). ` +
-        `Results may be unreliable with this few comparisons.`;
+      dom.earlyFinishMessage.textContent = `The ranking is only ${pct}% complete (${completed} of ~${estimated} comparisons). ` +
+        `More comparisons make the results more reliable.`;
       openModal(dom.earlyFinishModal);
       return;
     }

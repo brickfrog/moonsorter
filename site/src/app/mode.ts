@@ -18,13 +18,13 @@ export function setStartRankingCallback(fn: (options: StartOptions) => Promise<v
 export function setImportPath(path: 'anilist' | 'csv') {
   state.importPath = path;
   if (dom.importTitle) {
-    dom.importTitle.textContent = path === 'csv' ? 'Upload your CSV' : 'Import your list';
+    dom.importTitle.textContent = path === 'csv' ? 'Import your CSV file' : 'Import your list';
   }
   if (dom.importDesc) {
     dom.importDesc.textContent =
       path === 'csv'
         ? 'Select a CSV file with title and score columns.'
-        : 'Pull your AniList items, then choose how much to rank now.';
+        : 'Import your AniList titles. Then select how many titles to rank now.';
   }
   dom.importPathElements.forEach((el) => {
     const elPath = el.getAttribute('data-import-path');
@@ -79,7 +79,7 @@ export async function applyModeSelection(goal: RankGoal, mode: RankMode) {
     } catch (error) {
       setStatus(
         dom.importStatus,
-        error instanceof Error ? error.message : 'Failed to start ranking.',
+        error instanceof Error ? error.message : 'Moonsorter did not start the ranking. Try again.',
       );
     }
     return;

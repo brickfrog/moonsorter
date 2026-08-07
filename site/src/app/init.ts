@@ -26,14 +26,14 @@ export function initFlow() {
     }).catch((error) => {
       setStatus(
         dom.importStatus,
-        error instanceof Error ? error.message : 'Failed to start the demo.',
+        error instanceof Error ? error.message : 'The demo did not start. Reload the page and try again.',
       );
     });
     state.currentFilters = {};
   } else if (importParam === 'csv') {
     setImportPath('csv');
     showStep('import');
-    setStatus(dom.importStatus, 'Select a CSV file to begin.');
+    setStatus(dom.importStatus, 'Select a CSV file to start.');
   } else if (importParam === 'anilist') {
     if (hasToken) {
       setImportPath('anilist');
@@ -55,7 +55,7 @@ export function initApp() {
     .catch((error) => {
       setStatus(
         dom.connectStatus,
-        error instanceof Error ? error.message : 'Authorization failed.',
+        error instanceof Error ? error.message : 'The authorization failed. Connect to AniList again.',
       );
     })
     .finally(initFlow);

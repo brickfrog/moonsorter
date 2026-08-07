@@ -361,7 +361,7 @@ function updateResultsHeadline(payload: ResultsPayload) {
   if (!dom.resultsHeadline) return;
   const count = payload.rows.length;
   if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
-    dom.resultsHeadline.textContent = `${count} titles, ordered.`;
+    dom.resultsHeadline.textContent = `Moonsorter ordered ${count} titles.`;
     return;
   }
   const topKSize = payload.analysis.topK;
@@ -370,10 +370,10 @@ function updateResultsHeadline(payload: ResultsPayload) {
   const topKRows = Math.min(topKSize, count);
   const pct = topKRows > 0 ? (topKStable / topKRows) * 100 : 0;
   const stable = pct >= 80;
-  const qualifier = stable ? 'Stable' : 'Unsettled';
+  const qualifier = stable ? 'stable' : 'not stable';
   dom.resultsHeadline.innerHTML =
-    `${count} titles, ordered. ` +
-    `<em>${qualifier}</em> at ${pct.toFixed(1)}%.`;
+    `Moonsorter ordered ${count} titles. ` +
+    `The top ranks are <em>${qualifier}</em> at ${pct.toFixed(1)}%.`;
 }
 
 export function renderAnalysisSummary(payload: ResultsPayload) {
@@ -419,19 +419,19 @@ export function renderAnalysisSummary(payload: ResultsPayload) {
   if (dom.analysisRecommendation) {
     if (groupOnly) {
       dom.analysisRecommendation.textContent = stable
-        ? 'Looks stable. Keep ranking more groups if anything still feels off.'
-        : 'Needs more ranking. Keep sorting new groups to tighten the intervals.';
+        ? 'The ranking is stable. If a group looks incorrect, do more group sorts.'
+        : 'The ranking needs more data. Do more group sorts to make the confidence intervals smaller.';
     } else {
       dom.analysisRecommendation.textContent = stable
-        ? 'Looks stable. Spot-check anything that still feels off using the chips below.'
-        : 'Needs more comparisons. Click a title below to compare it with its nearest neighbor.';
+        ? 'The ranking is stable. If a title looks incorrect, click it below to compare it again.'
+        : 'The ranking needs more comparisons. Click a title below to compare it with its nearest neighbor.';
     }
   }
   if (dom.analysisUncertainList) {
     dom.analysisUncertainList.innerHTML = '';
     if (groupOnly) {
       dom.analysisUncertainList.textContent =
-        'Group mode: continue ranking batches to tighten the uncertainty bands.';
+        'Group mode: do more group sorts to make the confidence intervals smaller.';
       dom.analysisSummary.classList.remove('hidden');
       dom.uncertainCard?.classList.remove('hidden');
       return;

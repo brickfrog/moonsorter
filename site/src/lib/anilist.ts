@@ -79,8 +79,8 @@ async function fetchGraphQL<T>(
       response.status,
       parseRetryAfter(response.headers.get('Retry-After')),
       response.status === 429
-        ? 'AniList rate limit reached. Wait a minute and try again.'
-        : `AniList request failed: ${response.status}`,
+        ? 'AniList applied its rate limit. Wait one minute and try again.'
+        : `The AniList request failed: ${response.status}`,
     );
   }
   const payload = (await response.json()) as GraphQLResponse<T>;
@@ -88,7 +88,7 @@ async function fetchGraphQL<T>(
     throw new Error(payload.errors.map((err) => err.message).join(', '));
   }
   if (!payload.data) {
-    throw new Error('AniList returned no data');
+    throw new Error('AniList returned no data.');
   }
   return payload.data;
 }
@@ -244,7 +244,7 @@ function retryDelaySeconds(error: unknown): number | null {
 }
 
 function cancelled(done: number, total: number): Error {
-  const error = new Error(`Upload cancelled after ${done} of ${total}.`);
+  const error = new Error(`The upload stopped after ${done} of ${total} scores.`);
   error.name = 'AbortError';
   return error;
 }
@@ -277,7 +277,7 @@ export async function updateScores(
         const retryAfter = retryDelaySeconds(error);
         if (retryAfter == null || attempt >= UPLOAD_MAX_ATTEMPTS) {
           const reason = error instanceof Error ? error.message : String(error);
-          throw new Error(`Uploaded ${done} of ${total} before failing: ${reason}`);
+          throw new Error(`The upload failed after ${done} of ${total} scores: ${reason}`);
         }
         await sleep(retryAfter * 1000, signal);
         if (signal?.aborted) throw cancelled(done, total);

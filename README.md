@@ -1,40 +1,42 @@
 # moonsorter
 
-Browser-based ranking system using the Plackett-Luce model with uncertainty quantification. Built in MoonBit, compiled to WebAssembly.
+Moonsorter is a ranking system that runs in the browser. It uses the Plackett-Luce model and calculates the uncertainty of each rank. The source code is MoonBit. The build compiles the source code to WebAssembly.
 
 ## What it does
 
-Ranks items through pairwise comparisons or full ranking inputs. Uses the Plackett-Luce (PL) statistical model to estimate relative strengths and compute confidence intervals via bootstrap resampling.
+Moonsorter ranks items from comparisons or from complete rankings. It uses the Plackett-Luce (PL) statistical model. The model estimates the relative strength of each item. Bootstrap resampling gives the confidence interval of each rank.
 
 ## Algorithm
 
-**Plackett-Luce Model** (Luce 1959, Plackett 1975): Extends Bradley-Terry to full rankings. For a ranking where item `i` is placed above item `j`:
+**Plackett-Luce Model** (Luce 1959, Plackett 1975): This model extends Bradley-Terry to complete rankings. The formula applies to a ranking that puts item `i` before item `j`:
 
 ```
 P(i > j | remaining items) = exp(strength_i) / sum_k(exp(strength_k))
 ```
 
-For pairwise comparisons (Bradley-Terry special case):
+For a comparison of two items, the Bradley-Terry special case applies:
 ```
 P(i beats j) = 1 / (1 + exp(-(strength_i - strength_j)))
 ```
 
-**MM Algorithm** (Hunter 2004): Iterative majorization-minimization for MLE. Update rule:
+**MM Algorithm** (Hunter 2004): This algorithm does iterative majorization-minimization for the MLE. The update rule is:
 ```
 gamma_i^new = (W_i + prior) / (denominator_i + prior)
 ```
 
-where `gamma_i = exp(strength_i)`, `W_i` = wins at position `i`, and denominator aggregates over ranking positions.
+In this rule, `gamma_i = exp(strength_i)` and `W_i` is the number of wins at position `i`. The denominator sums over the ranking positions.
 
-**MAP Regularization**: `prior = 1.0` for every fit the browser app performs. An unregularized Plackett-Luce likelihood has no finite maximizer unless the comparison graph is strongly connected, which it never is early in a session.
+**MAP Regularization**: The browser app uses `prior = 1.0` for every fit. If the comparison graph is not strongly connected, an unregularized Plackett-Luce likelihood has no finite maximizer. Early in a session, the graph is never strongly connected. The prior keeps every fit finite.
 
-Converges to the MAP estimate without gradient computation or line search. Each iteration rescales so that `mean(gamma) = 1`, fixing the scale that the model leaves free.
+The algorithm converges to the MAP estimate. It does not use a gradient computation or a line search. Each iteration rescales the values so that `mean(gamma) = 1`. This rescale fixes the scale that the model leaves free.
 
-**Uncertainty**: `compute_uncertainty` runs a parametric bootstrap — each recorded event is resampled from the fitted model, refit, and the rank distribution collected. `get_rank_ci_low`/`get_rank_ci_high` return the 10th and 90th percentile ranks, an 80% interval. The point estimate and the bootstrap replicates use the same estimator, so a displayed rank always falls inside its own interval.
+**Uncertainty**: `compute_uncertainty` runs a parametric bootstrap. For each replicate, the function resamples every recorded event from the fitted model. Then the function fits the model again and records the rank distribution.
+
+`get_rank_ci_low` and `get_rank_ci_high` return the 10th and 90th percentile ranks. These two ranks are an 80% interval. The point estimate and the bootstrap replicates use the same estimator. A shown rank is therefore always inside its own interval.
 
 ## Build
 
-Requires the [MoonBit](https://www.moonbitlang.com/) toolchain.
+Install the [MoonBit](https://www.moonbitlang.com/) toolchain.
 
 ```bash
 # Build the WASM module and install it where the browser app loads it from
@@ -42,8 +44,8 @@ moon build --target wasm-gc --release
 cp _build/wasm-gc/release/build/web/web.wasm site/public/moonsorter.wasm
 ```
 
-`site/public/moonsorter.wasm` is committed, and CI fails the deploy if it does
-not match a fresh build of `src/` + `web/`.
+The repository contains `site/public/moonsorter.wasm`. If this file does not
+match a fresh build of `src/` and `web/`, CI stops the deploy.
 
 ## Run
 
@@ -53,8 +55,9 @@ bun install
 bun run dev
 ```
 
-Visit `http://localhost:4321` and start ranking items. Append `?demo=1` to skip
-the import step and rank a built-in sample list.
+Open `http://localhost:4321` in your browser. Then rank the items. To skip the
+import step, append `?demo=1` to the URL. Moonsorter then shows a built-in
+sample list.
 
 ## Development
 
@@ -91,24 +94,27 @@ site/
     moonsorter.wasm   # Compiled WASM binary (committed, verified in CI)
 ```
 
-The browser can only pass numbers across the WebAssembly boundary, so `web/`
-holds a single global ranker and exposes index-based functions over it. Adding
-an export means editing `web/web.mbt`, the export list in `web/moon.pkg`, and
-`WasmExports` in `site/src/lib/wasm.ts`.
+The browser can pass only numbers across the WebAssembly boundary. Therefore
+`web/` holds one global ranker and exposes index-based functions over it. To
+add an export, you must edit three files:
+
+- `web/web.mbt`
+- the export list in `web/moon.pkg`
+- `WasmExports` in `site/src/lib/wasm.ts`
 
 ## Features
 
-- **Full rankings**: Input complete orderings, not just pairwise
-- **Uncertainty quantification**: Bootstrap rank intervals, top-K confidence
-- **Pair selection policies**: A-optimal (0), Thompson top-pair (1), Thompson neighbour (2), each with optional epsilon-greedy random exploration
-- **Tier clustering**: Group similarly-ranked items via k-means
-- **Undo**: Revert the last decision; a tie undoes in one step
+- **Full rankings**: Moonsorter accepts a complete ordering of a group, not only a comparison of two items.
+- **Uncertainty quantification**: The bootstrap gives a rank interval for each item and a confidence value for the top-K set.
+- **Pair selection policies**: Moonsorter has three policies for pair selection: A-optimal (0), Thompson top-pair (1), and Thompson neighbor (2). Each policy can add epsilon-greedy random exploration.
+- **Tier clustering**: k-means groups the items that have a similar rank into tiers.
+- **Undo**: Moonsorter reverts the last decision. It also reverts a tie in one step.
 
 ## Code Style
 
-- Block-style organization with `///|` separators
-- Snapshot testing with `inspect` (prefer over `assert_eq`)
-- `*_wbtest.mbt` for whitebox tests
+- The code uses block-style organization with `///|` separators.
+- The tests use snapshot testing with `inspect` instead of `assert_eq`.
+- The `*_wbtest.mbt` files hold the whitebox tests.
 
 ## References
 

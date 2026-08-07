@@ -123,7 +123,7 @@ export function sessionStartOptions(saved: SavedState): StartOptions {
 
 export function downloadResults() {
   if (!state.lastResults) {
-    setStatus(dom.importStatus, 'No results to export yet.');
+    setStatus(dom.importStatus, 'There are no results to export.');
     return;
   }
   const blob = new Blob([JSON.stringify(state.lastResults, null, 2)], {
@@ -141,7 +141,7 @@ export function downloadResults() {
 
 export function downloadCsv() {
   if (!state.lastResults) {
-    setStatus(dom.importStatus, 'No results to export yet.');
+    setStatus(dom.importStatus, 'There are no results to export.');
     return;
   }
   const lines = [

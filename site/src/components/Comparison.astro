@@ -9,7 +9,7 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
     </div>
     <div class="compare-header-right">
       <span class="compare-progress-text" data-progress-text>0 / 0 comparisons</span>
-      <span class="help-dot" title="Estimate based on n·log(n). Actual may vary with active learning.">?</span>
+      <span class="help-dot" title="This estimate uses n·log(n). The actual number of comparisons can change with active learning.">?</span>
     </div>
   </header>
 
@@ -17,7 +17,7 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
     <button class="compare-card compare-card-a" type="button" data-choice="A">
       <div class="compare-card-top">
         <span class="compare-card-kbd kbd-hint"><span class="compare-card-arrow">→</span> A · press A or ←</span>
-        <span class="compare-card-kbd touch-hint hidden">Tap to choose</span>
+        <span class="compare-card-kbd touch-hint hidden">Tap to select</span>
         <span class="compare-card-seed" data-choice-seed="A"></span>
       </div>
       <div class="compare-card-poster" data-choice-poster="A">
@@ -47,7 +47,7 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
     <button class="compare-card compare-card-b" type="button" data-choice="B">
       <div class="compare-card-top">
         <span class="compare-card-kbd kbd-hint">B · press B or →</span>
-        <span class="compare-card-kbd touch-hint hidden">Tap to choose</span>
+        <span class="compare-card-kbd touch-hint hidden">Tap to select</span>
         <span class="compare-card-seed" data-choice-seed="B"></span>
       </div>
       <div class="compare-card-poster" data-choice-poster="B">

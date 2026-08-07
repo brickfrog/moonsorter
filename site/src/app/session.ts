@@ -11,7 +11,7 @@ import { startRanking } from './ranking';
 export function resumeSession(): boolean {
   const saved = loadState();
   if (!saved) {
-    setStatus(dom.sessionStatus, 'No saved session found.');
+    setStatus(dom.sessionStatus, 'There is no saved session.');
     return false;
   }
   state.pendingStart = null;
@@ -56,12 +56,12 @@ export function resumeSession(): boolean {
     if (saved.optInTierList != null && dom.optInTierList) {
       dom.optInTierList.checked = saved.optInTierList;
     }
-    setStatus(dom.sessionStatus, 'Session resumed.');
+    setStatus(dom.sessionStatus, 'Moonsorter resumed the session.');
   })
     .catch((error) => {
       setStatus(
         dom.sessionStatus,
-        error instanceof Error ? error.message : 'Resume failed.',
+        error instanceof Error ? error.message : 'The resume failed. Try again.',
       );
     });
   return true;
@@ -79,7 +79,7 @@ export function performClearSession() {
   if (dom.analysisStatus) {
     dom.analysisStatus.textContent = '';
   }
-  setStatus(dom.sessionStatus, 'Session cleared.');
+  setStatus(dom.sessionStatus, 'Moonsorter cleared the session.');
   // resetState() drops the ranker, so the progress bar would otherwise keep
   // showing the cleared session's counts.
   updateProgress();

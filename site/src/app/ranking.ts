@@ -71,7 +71,7 @@ export async function startRanking(options: StartOptions) {
     .filter((entry) => entry.title.length > 0);
 
   if (cleaned.length < 2) {
-    setStatus(dom.importStatus, 'Need at least two valid titles to rank.');
+    setStatus(dom.importStatus, 'Moonsorter needs at least two valid titles to make a ranking.');
     return;
   }
 
@@ -119,7 +119,7 @@ export async function startRanking(options: StartOptions) {
       dom.optInTierList.disabled = true;
       const label = dom.optInTierList.parentElement;
       if (label) {
-        label.title = 'Tier list requires cover images (only available for AniList imports)';
+        label.title = 'The tier list requires cover images. Only AniList imports have cover images.';
         label.style.opacity = '0.5';
       }
     } else {
@@ -152,7 +152,7 @@ export async function startRanking(options: StartOptions) {
     const ok = wasmApi.create_ranker(state.items.length);
     if (!ok) {
       console.error('[rank] create_ranker returned false');
-      setStatus(dom.importStatus, 'Failed to create ranker.');
+      setStatus(dom.importStatus, 'Moonsorter did not create the ranker. Reload the page and try again.');
       return;
     }
     wasmApi.set_uncertainty_prior(state.uncertaintyPrior);
@@ -162,8 +162,8 @@ export async function startRanking(options: StartOptions) {
     setStatus(
       dom.importStatus,
       error instanceof Error
-        ? `Ranker init failed: ${error.message}`
-        : 'Ranker init failed.',
+        ? `The ranker did not start: ${error.message}`
+        : 'The ranker did not start. Reload the page and try again.',
     );
     return;
   }

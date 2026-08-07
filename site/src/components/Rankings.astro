@@ -6,7 +6,7 @@ const { title = 'Results' } = Astro.props;
     <div class="pill">Step 5: Results</div>
     <h3 class="results-headline font-display" data-results-headline>{title}</h3>
     <p class="results-subhead">
-      CI bars are sized by the width of the 80% bootstrap rank interval. Amber stripe marks an uncertain row — click it to compare next.
+      Each CI bar shows the width of the 80% bootstrap rank interval. An amber stripe marks an uncertain row. To compare that row next, click it.
     </p>
   </header>
 
@@ -55,15 +55,15 @@ const { title = 'Results' } = Astro.props;
         <p class="sidebar-body">Resample comparisons to estimate rank confidence intervals.</p>
         <div class="analysis-controls-stack">
           <label>
-            <span class="inline-flex items-center gap-2">Samples <span class="help-dot" title="Bootstrap resamples.">?</span></span>
+            <span class="inline-flex items-center gap-2">Samples <span class="help-dot" title="This value sets the number of bootstrap resamples.">?</span></span>
             <input id="analysis-samples" type="number" min="50" step="50" value="200" />
           </label>
           <label>
-            <span class="inline-flex items-center gap-2">Top-K <span class="help-dot" title="Lock-in threshold rank.">?</span></span>
+            <span class="inline-flex items-center gap-2">Top-K <span class="help-dot" title="This value sets the rank threshold for lock-in.">?</span></span>
             <input id="analysis-topk" type="number" min="1" step="1" value="10" />
           </label>
           <label>
-            <span class="inline-flex items-center gap-2">Max iterations <span class="help-dot" title="MM fit iterations per sample.">?</span></span>
+            <span class="inline-flex items-center gap-2">Max iterations <span class="help-dot" title="This value sets the number of MM fit iterations for each sample.">?</span></span>
             <input id="analysis-max-iter" type="number" min="5" step="5" value="40" />
           </label>
         </div>
@@ -76,7 +76,7 @@ const { title = 'Results' } = Astro.props;
       <div class="sidebar-card hidden" data-analysis-summary>
         <p class="sidebar-eyebrow" data-analysis-eyebrow>Bootstrap · — resamples</p>
         <p class="sidebar-title font-display">Ranking stability</p>
-        <p class="sidebar-body">Median rank change under resampling.</p>
+        <p class="sidebar-body">These statistics show the median rank change under resampling.</p>
         <dl class="stability-stats">
           <div>
             <dt>Median CI width</dt>
@@ -102,18 +102,18 @@ const { title = 'Results' } = Astro.props;
       </div>
 
       <div class="sidebar-card hidden" data-uncertain-card>
-        <p class="sidebar-eyebrow">Uncertain items</p>
+        <p class="sidebar-eyebrow">Uncertain titles</p>
         <p class="sidebar-title font-display">Click to compare</p>
         <div class="analysis-uncertain-list" data-analysis-uncertain-list></div>
         <button class="btn-secondary" type="button" data-action="resume-comparisons">
-          Keep comparing uncertain pairs
+          Continue the comparisons for uncertain pairs
         </button>
       </div>
 
       <div class="sidebar-card">
         <p class="sidebar-eyebrow">Export</p>
         <button class="btn hidden" type="button" data-action="upload">
-          Push scores to AniList →
+          Upload scores to AniList →
         </button>
         <div class="export-rows">
           <button class="export-row" type="button" data-action="download-results">
@@ -130,7 +130,7 @@ const { title = 'Results' } = Astro.props;
           </button>
         </div>
         <button class="btn-secondary" type="button" data-action="restart">
-          Start over
+          Start again
         </button>
       </div>
     </aside>

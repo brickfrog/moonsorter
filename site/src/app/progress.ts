@@ -7,11 +7,11 @@ export function updateGroupCoverage() {
   if (total <= 0) {
     if (dom.groupCoverage) {
       dom.groupCoverage.textContent =
-        'Coverage: 0 / 0 titles touched (0 remaining)';
+        'Coverage: 0 / 0 titles compared (0 not compared)';
     }
     if (dom.groupEstimate) {
       dom.groupEstimate.textContent =
-        'Baseline target: ~0 group sorts (~2x touches).';
+        'Baseline target: ~0 group sorts (~2 sorts per title).';
     }
     return;
   }
@@ -28,7 +28,7 @@ export function updateGroupCoverage() {
   const covered = touched.size;
   const remaining = Math.max(0, total - covered);
   if (dom.groupCoverage) {
-    dom.groupCoverage.textContent = `Coverage: ${covered} / ${total} titles touched (${remaining} remaining)`;
+    dom.groupCoverage.textContent = `Coverage: ${covered} / ${total} titles compared (${remaining} not compared)`;
   }
 
   if (dom.groupEstimate) {
@@ -37,7 +37,7 @@ export function updateGroupCoverage() {
     const estimatedSorts =
       groupSize > 0 ? Math.ceil(targetTouches / groupSize) : 0;
     const avgTouches = totalTouches / total;
-    dom.groupEstimate.textContent = `Baseline target: ~${estimatedSorts} group sorts (~${avgTouches.toFixed(1)}x touches so far).`;
+    dom.groupEstimate.textContent = `Baseline target: ~${estimatedSorts} group sorts (~${avgTouches.toFixed(1)} sorts per title now).`;
   }
 }
 
@@ -52,7 +52,7 @@ function paintProgress(completed: number, estimated: number) {
     track.setAttribute('aria-valuenow', pct.toString());
     track.setAttribute(
       'aria-valuetext',
-      estimated > 0 ? `${completed} of ${estimated} comparisons` : 'No comparisons yet',
+      estimated > 0 ? `${completed} of ${estimated} comparisons` : 'No comparisons are complete yet.',
     );
   }
 

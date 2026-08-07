@@ -174,7 +174,7 @@ export async function loadWasm(): Promise<WasmExports> {
   if (wasm) return wasm;
   const response = await fetch(withBase('moonsorter.wasm'));
   if (!response.ok) {
-    throw new Error(`Failed to load WASM: ${response.status}`);
+    throw new Error(`Moonsorter did not load the WASM module: ${response.status}`);
   }
   const bytes = await response.arrayBuffer();
   const module = await WebAssembly.instantiate(bytes, {});

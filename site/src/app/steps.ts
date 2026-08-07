@@ -77,18 +77,18 @@ export function navigateStep(target: StepKey) {
     next = nearestAvailableStep();
     if (dom.stepperStatus) {
       dom.stepperStatus.textContent =
-        'Finish a few comparisons to unlock results.';
+        'Complete more comparisons to see the results.';
     }
   } else if (target === 'compare' && !canShowCompare()) {
     next = nearestAvailableStep();
     if (dom.stepperStatus) {
       dom.stepperStatus.textContent =
-        'Import a list and choose a mode to start comparing.';
+        'Import a list. Then select a mode to start the comparisons.';
     }
   } else if (target === 'mode' && !canShowMode()) {
     next = getToken() ? 'import' : 'connect';
     if (dom.stepperStatus) {
-      dom.stepperStatus.textContent = 'Import a list to choose a ranking mode.';
+      dom.stepperStatus.textContent = 'Import a list to select a ranking mode.';
     }
   } else if (dom.stepperStatus) {
     dom.stepperStatus.textContent = '';

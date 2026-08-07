@@ -19,11 +19,11 @@ export function updateScoreFormatLabel() {
   const autoOption = dom.scoreFormat.querySelector('option[value="AUTO"]');
   if (!autoOption) return;
   if (!state.detectedScoreFormat) {
-    autoOption.textContent = 'Use AniList format (auto)';
+    autoOption.textContent = 'Use the AniList format (automatic)';
     return;
   }
   const config = getScoreConfig(state.detectedScoreFormat);
-  autoOption.textContent = `Use AniList format (auto: ${config.label})`;
+  autoOption.textContent = `Use the AniList format (automatic: ${config.label})`;
 }
 
 function getYearRangeFromInputs(

@@ -88,7 +88,7 @@ export function setupEvents() {
       } catch (error) {
         setStatus(
           dom.connectStatus,
-          error instanceof Error ? error.message : 'Missing client ID.',
+          error instanceof Error ? error.message : 'The client ID is missing. Set PUBLIC_ANILIST_CLIENT_ID in .env',
         );
       }
     });
@@ -99,7 +99,7 @@ export function setupEvents() {
     button.addEventListener('click', () => {
       setImportPath('csv');
       showStep('import');
-      setStatus(dom.importStatus, 'Select a CSV file to begin.');
+      setStatus(dom.importStatus, 'Select a CSV file to start.');
     });
   });
 
@@ -139,7 +139,7 @@ export function setupEvents() {
   if (logoutButton) {
     logoutButton.addEventListener('click', () => {
       logout();
-      setStatus(dom.importStatus, 'Disconnected.');
+      setStatus(dom.importStatus, 'Moonsorter disconnected from AniList.');
       showStep('connect');
     });
   }
@@ -236,26 +236,26 @@ export function setupEvents() {
       }
       const updates = buildUploadPayload();
       if (!updates.length) {
-        setStatus(dom.importStatus, 'Nothing selected to upload yet.');
+        setStatus(dom.importStatus, 'You did not select any titles to upload.');
         return;
       }
       uploadButton.disabled = true;
-      uploadButton.textContent = `Uploading 0/${updates.length}...`;
+      uploadButton.textContent = `Uploaded 0/${updates.length}`;
       try {
         // Paced by updateScores to stay under the AniList rate limit, so a
         // large list takes minutes; report progress rather than looking hung.
         await updateScores(token, updates, {
           onProgress: (done, total) => {
-            uploadButton.textContent = `Uploading ${done}/${total}...`;
+            uploadButton.textContent = `Uploaded ${done}/${total}`;
           },
         });
-        uploadButton.textContent = 'Uploaded!';
-        setStatus(dom.importStatus, `Uploaded ${updates.length} scores.`);
+        uploadButton.textContent = 'Uploaded';
+        setStatus(dom.importStatus, `Moonsorter uploaded ${updates.length} scores.`);
       } catch (error) {
         uploadButton.textContent = 'Upload selected';
         setStatus(
           dom.importStatus,
-          error instanceof Error ? error.message : 'Upload failed.',
+          error instanceof Error ? error.message : 'The upload failed. Try the upload again.',
         );
       } finally {
         uploadButton.disabled = false;
@@ -299,11 +299,11 @@ export function setupEvents() {
         if (dom.optInTierList && saved.optInTierList !== undefined) {
           dom.optInTierList.checked = saved.optInTierList;
         }
-        setStatus(dom.sessionStatus, `Loaded ${saved.items.length} titles from file.`);
+        setStatus(dom.sessionStatus, `Moonsorter loaded ${saved.items.length} titles from the file.`);
       } catch (error) {
         setStatus(
           dom.sessionStatus,
-          error instanceof Error ? error.message : 'Could not load that session.',
+          error instanceof Error ? error.message : 'Moonsorter did not load that session. Select a different file.',
         );
       }
     });

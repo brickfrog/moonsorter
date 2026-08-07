@@ -48,11 +48,11 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
     body: JSON.stringify({ code }),
   });
   if (!response.ok) {
-    throw new Error(`Token request failed: ${response.status}`);
+    throw new Error(`The token request failed: ${response.status}`);
   }
   const data = (await response.json()) as { access_token?: string };
   if (!data.access_token) {
-    throw new Error('No access token returned.');
+    throw new Error('AniList returned no access token.');
   }
   storeToken(data.access_token);
   return data.access_token;

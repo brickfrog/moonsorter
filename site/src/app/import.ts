@@ -41,7 +41,7 @@ export function applyListFilters(list: Entry[]) {
 }
 
 export async function handleImport() {
-  setStatus(dom.importStatus, 'Importing from AniList...');
+  setStatus(dom.importStatus, 'Moonsorter imports your list from AniList.');
   const token = getToken();
   if (!token) {
     setStatus(dom.importStatus, 'Connect to AniList first.');
@@ -88,7 +88,7 @@ export async function handleImport() {
     const details = state.includeUnscored
       ? `${filteredScored} scored, ${filteredUnscored} unscored included`
       : `${filteredScored} scored, ${unscoredCount} unscored excluded`;
-    setStatus(dom.importStatus, `Imported ${filtered.length} titles (${details}).`);
+    setStatus(dom.importStatus, `Moonsorter imported ${filtered.length} titles (${details}).`);
     state.pendingStart = {
       list: filtered,
       scoreFormat: state.scoreFormat,
@@ -107,13 +107,13 @@ export async function handleImport() {
     console.error('[rank] import failed', error);
     setStatus(
       dom.importStatus,
-      error instanceof Error ? error.message : 'Import failed.',
+      error instanceof Error ? error.message : 'The import failed. Try again.',
     );
   }
 }
 
 export async function handleCsvImport() {
-  setStatus(dom.importStatus, 'Importing from CSV...');
+  setStatus(dom.importStatus, 'Moonsorter imports your list from the CSV file.');
   const file = dom.csvFile?.files?.[0];
   if (!file) {
     setStatus(dom.importStatus, 'Select a CSV file first.');
@@ -123,7 +123,7 @@ export async function handleCsvImport() {
     const text = await file.text();
     const list = parseCsvEntries(text);
     if (list.length < 2) {
-      setStatus(dom.importStatus, 'Need at least two valid titles to rank.');
+      setStatus(dom.importStatus, 'Moonsorter needs at least two valid titles to make a ranking.');
       return;
     }
 
@@ -160,7 +160,7 @@ export async function handleCsvImport() {
     const details = state.includeUnscored
       ? `${filteredScored} scored, ${filteredUnscored} unscored included`
       : `${filteredScored} scored, ${unscoredCount} unscored excluded`;
-    setStatus(dom.importStatus, `Imported ${filtered.length} titles (${details}).`);
+    setStatus(dom.importStatus, `Moonsorter imported ${filtered.length} titles (${details}).`);
     state.pendingStart = {
       list: filtered,
       scoreFormat: state.scoreFormat,
@@ -179,7 +179,7 @@ export async function handleCsvImport() {
     console.error('[rank] CSV import failed', error);
     setStatus(
       dom.importStatus,
-      error instanceof Error ? error.message : 'CSV import failed.',
+      error instanceof Error ? error.message : 'The CSV import failed. Try again.',
     );
   }
 }

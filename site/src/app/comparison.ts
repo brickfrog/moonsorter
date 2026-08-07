@@ -69,13 +69,13 @@ function updatePairStrategyBadge() {
 
   // Epsilon controls exploration: high = random, low = focused
   if (state.explorationEpsilon >= 0.25) {
-    badge.textContent = '\uD83C\uDFB2 Random exploration';
+    badge.textContent = '\uD83C\uDFB2 Random sampling';
     badge.classList.remove('hidden');
   } else if (state.explorationEpsilon >= 0.1) {
     badge.textContent = '\uD83D\uDCCA Balanced sampling';
     badge.classList.remove('hidden');
   } else {
-    badge.textContent = '\uD83C\uDFAF Uncertainty-focused';
+    badge.textContent = '\uD83C\uDFAF Uncertainty sampling';
     badge.classList.remove('hidden');
   }
 }
@@ -149,7 +149,7 @@ export function handleChoice(result: number) {
   // still costing one comparison and one undo step.
   const ok = state.wasm.add_comparison(left, right, result);
   if (!ok) {
-    setStatus(dom.importStatus, 'Failed to record comparison.');
+    setStatus(dom.importStatus, 'Moonsorter did not record the comparison. Make the comparison again.');
     return;
   }
   state.comparisons.push(
@@ -165,12 +165,12 @@ export function handleChoice(result: number) {
 export function undoLast() {
   if (!state.wasm) return;
   if (state.comparisons.length === 0) {
-    setStatus(dom.importStatus, 'No comparisons to undo yet.');
+    setStatus(dom.importStatus, 'There are no comparisons to undo.');
     return;
   }
   const ok = state.wasm.undo_last();
   if (!ok) {
-    setStatus(dom.importStatus, 'Undo failed.');
+    setStatus(dom.importStatus, 'The undo operation failed. Try again.');
     return;
   }
   const undone = state.comparisons.pop();
@@ -186,7 +186,7 @@ export function undoLast() {
 export function redoLast() {
   if (!state.wasm) return;
   if (state.redoStack.length === 0) {
-    setStatus(dom.importStatus, 'Nothing to redo.');
+    setStatus(dom.importStatus, 'There are no comparisons to redo.');
     return;
   }
   const toRedo = state.redoStack.pop();
@@ -194,7 +194,7 @@ export function redoLast() {
 
   const ok = applyHistoryEntry(state.wasm, toRedo);
   if (!ok) {
-    setStatus(dom.importStatus, 'Redo failed.');
+    setStatus(dom.importStatus, 'The redo operation failed. Try again.');
     state.redoStack.push(toRedo); // put it back
     return;
   }

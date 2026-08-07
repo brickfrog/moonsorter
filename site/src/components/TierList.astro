@@ -4,12 +4,12 @@
   <div class="flex flex-col gap-4 mb-6">
     <div>
       <h4 class="text-xl font-display">Visual Tier List</h4>
-      <p class="text-sm text-latte-subtext1">Automatic clustering based on model scores</p>
+      <p class="text-sm text-latte-subtext1">Moonsorter groups the titles into tiers with automatic clustering of the model scores.</p>
     </div>
     <label class="max-w-xs">
       <span class="inline-flex items-center gap-2">
         Number of tiers
-        <span class="help-dot" title="How many tiers to group items into (3-7)">?</span>
+        <span class="help-dot" title="This value sets the number of tiers (3-7).">?</span>
       </span>
       <input id="tier-k-value" type="number" min="3" max="7" step="1" value="5" />
     </label>
@@ -20,7 +20,7 @@
   </div>
 
   <div class="mt-6 flex flex-col items-center gap-2">
-    <button class="btn" type="button" data-action="download-tierlist" title="Captures tier list at current viewport width">
+    <button class="btn" type="button" data-action="download-tierlist" title="Moonsorter captures the tier list at the current viewport width.">
       📷 Download Tier List
     </button>
     <p class="status-slot" role="status" aria-live="polite" data-tierlist-status></p>

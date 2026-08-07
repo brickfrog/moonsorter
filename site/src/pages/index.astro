@@ -13,13 +13,13 @@ import TierList from '../components/TierList.astro';
         Rank your list, one pair at a time.
       </h2>
       <p class="text-latte-subtext1">
-        Import from AniList or CSV, answer "A or B?" until you're done. Progress saves automatically.
+        Import your list from AniList or from a CSV file. Then answer "A or B?" until you are done. Progress saves automatically.
       </p>
     </div>
     <div class="card space-y-4">
       <h3 class="text-lg font-display">Session controls</h3>
       <p class="text-sm text-latte-subtext1">
-        Keep a tab open while you compare. Resume at any time.
+        Keep a tab open while you compare. Resume the session at any time.
       </p>
       <div class="flex flex-wrap gap-3">
         <button class="btn-secondary" type="button" data-action="resume">
@@ -72,10 +72,10 @@ import TierList from '../components/TierList.astro';
   </section>
 
   <section class="card rank-loading" data-rank-loading>
-    <div class="pill mb-3">Preparing session</div>
-    <h3 class="text-xl font-display">Loading ranking tools...</h3>
+    <div class="pill mb-3">Session setup</div>
+    <h3 class="text-xl font-display">Moonsorter loads the ranking tools.</h3>
     <p class="text-sm text-latte-subtext1">
-      Checking saved progress and getting the session ready.
+      Moonsorter reads your saved progress and prepares the session.
     </p>
     <div class="loading-bar mt-4"></div>
   </section>
@@ -84,7 +84,7 @@ import TierList from '../components/TierList.astro';
     <div class="pill mb-3">Step 1: Connect</div>
     <h3 class="text-xl font-display">Connect your source</h3>
     <p class="text-sm text-latte-subtext1 mb-4">
-      Connect to AniList to import and sync your list, or use CSV/demo data.
+      Connect to AniList to import your list and to upload your scores. You can also use a CSV file or the demo list.
     </p>
     <div class="flex flex-wrap gap-3">
       <button class="btn btn-anilist" type="button" data-action="connect">
@@ -96,10 +96,10 @@ import TierList from '../components/TierList.astro';
         <span>Connect to AniList</span>
       </button>
       <button class="btn-secondary" type="button" data-action="csv">
-        Use CSV upload
+        Use a CSV file
       </button>
       <button class="btn-secondary" type="button" data-action="demo">
-        Use demo list
+        Use the demo list
       </button>
     </div>
     <p class="text-xs text-latte-subtext0" data-connect-status role="status" aria-live="polite"></p>
@@ -109,7 +109,7 @@ import TierList from '../components/TierList.astro';
     <div class="pill mb-3">Step 2: Import</div>
     <h3 class="text-xl font-display" data-import-title>Import your list</h3>
     <p class="text-sm text-latte-subtext1 mb-4" data-import-desc>
-      Pull your AniList items or upload a CSV, then choose how much to rank now.
+      Import your titles from AniList, or import a CSV file. Then select how many titles to rank now.
     </p>
     <!-- A plain grid, not a form: these controls are read by the import
          buttons below and there is nothing to submit. As a <form> it had no
@@ -118,7 +118,7 @@ import TierList from '../components/TierList.astro';
     <div class="grid gap-4 md:grid-cols-2">
       <!-- CSV-only: file input -->
       <label class="col-span-full" data-import-path="csv">
-        CSV file (columns: title, score, media_id optional)
+        CSV file with the columns title, score, and media_id (media_id is optional)
         <input id="csv-file" type="file" accept=".csv,text/csv" />
       </label>
 
@@ -133,32 +133,32 @@ import TierList from '../components/TierList.astro';
       <label data-import-path="anilist">
         Import mode
         <select id="import-mode">
-          <option value="all">All completed/current</option>
+          <option value="all">All completed and current titles</option>
           <option value="top">Top slice only</option>
           <option value="bottom">Bottom slice only</option>
           <option value="top-bottom">Top and bottom slice</option>
         </select>
       </label>
       <label data-import-path="anilist">
-        Slice size (for top/bottom)
+        Slice size (for the top and bottom modes)
         <input id="import-count" type="number" min="5" max="100" value="20" />
       </label>
       <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
         <input id="include-unscored" type="checkbox" />
-        <span>Include unscored titles</span>
+        <span>Include the unscored titles</span>
       </label>
       <label class="flex items-center gap-2 text-sm text-latte-subtext1">
         <input id="use-score-prior" type="checkbox" checked />
-        <span>Use original scores as priors</span>
+        <span>Use the original scores as priors</span>
       </label>
       <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
         <input id="preserve-range" type="checkbox" checked />
-        <span>Preserve original score range on upload</span>
+        <span>Keep the original score range on upload</span>
       </label>
       <label data-import-path="anilist">
         Score scale
         <select id="score-format">
-          <option value="AUTO">Use AniList format (auto)</option>
+          <option value="AUTO">Use the AniList format (automatic)</option>
           <option value="POINT_100">100-point</option>
           <option value="POINT_10_DECIMAL">10-point (decimal)</option>
           <option value="POINT_10">10-point</option>
@@ -169,28 +169,28 @@ import TierList from '../components/TierList.astro';
 
       <!-- AniList-only: year filters -->
       <label data-import-path="anilist">
-        Aired year (from / to)
+        Aired year (from and to)
         <div class="mt-2 grid grid-cols-2 gap-2">
           <input id="filter-aired-from" type="number" min="1900" step="1" />
           <input id="filter-aired-to" type="number" min="1900" step="1" />
         </div>
       </label>
       <label data-import-path="anilist">
-        Started year (from / to)
+        Started year (from and to)
         <div class="mt-2 grid grid-cols-2 gap-2">
           <input id="filter-started-from" type="number" min="1900" step="1" />
           <input id="filter-started-to" type="number" min="1900" step="1" />
         </div>
       </label>
       <label data-import-path="anilist">
-        Completed year (from / to)
+        Completed year (from and to)
         <div class="mt-2 grid grid-cols-2 gap-2">
           <input id="filter-completed-from" type="number" min="1900" step="1" />
           <input id="filter-completed-to" type="number" min="1900" step="1" />
         </div>
       </label>
       <label data-import-path="anilist">
-        List updated year (from / to)
+        List updated year (from and to)
         <div class="mt-2 grid grid-cols-2 gap-2">
           <input id="filter-updated-from" type="number" min="1900" step="1" />
           <input id="filter-updated-to" type="number" min="1900" step="1" />
@@ -206,7 +206,7 @@ import TierList from '../components/TierList.astro';
           <label>
             <span class="inline-flex items-center gap-2">
               Exploration rate (epsilon)
-              <span class="help-dot" title="Chance to ask a random comparison instead of the most informative pair.">?</span>
+              <span class="help-dot" title="This value sets how frequently Moonsorter asks a random comparison instead of the most informative pair.">?</span>
             </span>
             <input
               id="exploration-epsilon"
@@ -220,7 +220,7 @@ import TierList from '../components/TierList.astro';
           <label>
             <span class="inline-flex items-center gap-2">
               Uncertainty prior
-              <span class="help-dot" title="Regularization for uncertainty scoring. Higher values make pair selection less sensitive to sparse data.">?</span>
+              <span class="help-dot" title="This value regularizes the uncertainty scores. A high value makes the pair selection less sensitive to sparse data.">?</span>
             </span>
             <input id="uncertainty-prior" type="number" min="0.1" step="0.1" value="1" />
           </label>
@@ -245,16 +245,17 @@ import TierList from '../components/TierList.astro';
   </section>
 
   <section class="card hidden" data-step="mode">
-    <div class="pill mb-3">Step 3: Choose mode</div>
-    <h3 class="text-xl font-display">Choose how you want to rank</h3>
+    <div class="pill mb-3">Step 3: Select mode</div>
+    <h3 class="text-xl font-display">Select how you want to rank</h3>
     <p class="text-sm text-latte-subtext1 mb-4">
-      This only changes the interaction style. The underlying model stays the same.
+      This selection changes only the interaction style. The model stays the same.
     </p>
     <div class="space-y-4">
       <div class="card-muted space-y-3">
         <div class="pill">Rescore an existing list</div>
         <p class="text-sm text-latte-subtext1">
-          Preserve your current ordering and nudge it where it feels off.
+          These modes keep your current order.
+          They change only the titles that are in the wrong position.
         </p>
         <div class="grid gap-3 md:grid-cols-2">
           <button
@@ -265,7 +266,7 @@ import TierList from '../components/TierList.astro';
           >
             <span class="font-semibold text-latte-text">Pairwise only</span>
             <span class="text-xs text-latte-subtext0">
-              A/B comparisons with strong priors from your scores.
+              Moonsorter uses A/B comparisons with strong priors from your scores.
             </span>
           </button>
           <button
@@ -274,9 +275,10 @@ import TierList from '../components/TierList.astro';
             data-rank-goal="rescore"
             data-rank-mode="group"
           >
-            <span class="font-semibold text-latte-text">Group ranking only</span>
+            <span class="font-semibold text-latte-text">Group sort only</span>
             <span class="text-xs text-latte-subtext0">
-              Drag small batches into order; good for reshuffling.
+              Drag small batches into order.
+              This mode is good when you must change many positions.
             </span>
           </button>
         </div>
@@ -284,13 +286,13 @@ import TierList from '../components/TierList.astro';
       <div class="card-muted space-y-3">
         <div class="pill">Rank from scratch</div>
         <p class="text-sm text-latte-subtext1">
-          Start fresh and build an ordering without relying on prior scores.
+          These modes build a new order. They ignore your prior scores.
         </p>
         <label class="text-sm text-latte-subtext1">
           Goal
           <select id="scratch-goal">
-            <option value="full">Full ordering</option>
-            <option value="top-k">Find my top tier quickly</option>
+            <option value="full">Rank all the titles</option>
+            <option value="top-k">Find the top tier quickly</option>
           </select>
         </label>
         <div class="grid gap-3 md:grid-cols-3">
@@ -302,7 +304,7 @@ import TierList from '../components/TierList.astro';
           >
             <span class="font-semibold text-latte-text">Pairwise only</span>
             <span class="text-xs text-latte-subtext0">
-              Slow and steady A/B comparisons end-to-end.
+              Moonsorter uses A/B comparisons for the full list. This mode is slow and steady.
             </span>
           </button>
           <button
@@ -311,9 +313,9 @@ import TierList from '../components/TierList.astro';
             data-rank-goal="scratch"
             data-rank-mode="group"
           >
-            <span class="font-semibold text-latte-text">Group ranking only</span>
+            <span class="font-semibold text-latte-text">Group sort only</span>
             <span class="text-xs text-latte-subtext0">
-              Faster bootstrap by ordering mini-sets.
+              Moonsorter builds the order from group sorts. This mode is faster.
             </span>
           </button>
           <button
@@ -323,10 +325,10 @@ import TierList from '../components/TierList.astro';
             data-rank-mode="group-pairwise"
           >
             <span class="font-semibold text-latte-text">
-              Group → Pairwise refine
+              Group sort → Pairwise refine
             </span>
             <span class="text-xs text-latte-subtext0">
-              Bootstrap with group sorts, then fine-tune with A/B.
+              Moonsorter starts with group sorts. Then you refine the order with A/B comparisons.
             </span>
           </button>
         </div>
@@ -351,7 +353,7 @@ import TierList from '../components/TierList.astro';
         <span>Redo</span><span class="kbd-badge kbd-hint">^Y</span>
       </button>
       <button class="btn" type="button" data-action="finish">
-        Finish &amp; review
+        Finish and review
       </button>
       <label class="inline-tier-toggle">
         <input id="opt-in-tier-list" type="checkbox" checked />
@@ -375,16 +377,16 @@ import TierList from '../components/TierList.astro';
     aria-describedby="early-finish-message"
   >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2" id="early-finish-title">Results may be unreliable</h3>
+      <h3 class="text-lg font-display mb-2" id="early-finish-title">Results can be unreliable</h3>
       <p class="text-sm text-latte-subtext1 mb-4" id="early-finish-message" data-early-finish-message>
         <!-- Message will be filled by JS -->
       </p>
       <div class="flex gap-3">
         <button class="btn-secondary" type="button" data-action="cancel-finish">
-          Keep comparing
+          Continue the comparisons
         </button>
         <button class="btn" type="button" data-action="confirm-finish">
-          View results anyway
+          Show the results
         </button>
       </div>
     </div>
@@ -400,16 +402,16 @@ import TierList from '../components/TierList.astro';
     aria-describedby="start-over-message"
   >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2" id="start-over-title">Start over?</h3>
+      <h3 class="text-lg font-display mb-2" id="start-over-title">Start again?</h3>
       <p class="text-sm text-latte-subtext1 mb-4" id="start-over-message">
-        This will clear all comparisons and rankings. This cannot be undone.
+        This action will clear all comparisons and rankings. You cannot undo this action.
       </p>
       <div class="flex gap-3">
         <button class="btn-secondary" type="button" data-action="cancel-start-over">
           Cancel
         </button>
         <button class="btn" type="button" data-action="confirm-start-over">
-          Start over
+          Start again
         </button>
       </div>
     </div>

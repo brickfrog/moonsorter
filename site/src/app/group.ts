@@ -24,8 +24,8 @@ export function updateModeUI() {
   if (dom.analysisResumeButton) {
     dom.analysisResumeButton.textContent =
       state.rankMode === 'pairwise' || state.rankPhase === 'pairwise'
-        ? 'Keep comparing'
-        : 'Keep ranking';
+        ? 'Continue the comparisons'
+        : 'Continue the group sorts';
   }
 }
 
@@ -51,7 +51,7 @@ function moveSortItem(container: Element, item: HTMLElement, delta: number) {
   const title = item.querySelector('.item-title')?.textContent ?? 'Title';
   setStatus(
     document.querySelector('[data-sort-group-live]'),
-    `${title} moved to position ${to + 1} of ${items.length}`,
+    `${title} moved to position ${to + 1} of ${items.length}.`,
   );
 }
 
@@ -162,7 +162,7 @@ export function submitSort() {
 
   const ok = applyRanking(state.wasm, orderedIndices);
   if (!ok) {
-    setStatus(dom.importStatus, 'Failed to record group ranking.');
+    setStatus(dom.importStatus, 'Moonsorter did not record the group sort. Do the group sort again.');
     return;
   }
 
