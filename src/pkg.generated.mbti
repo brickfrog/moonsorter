@@ -96,6 +96,7 @@ pub struct IndexedRanker {
   mut topk_confidence : Array[Double]
   history : Array[IndexedHistoryEntry]
 }
+pub fn IndexedRanker::add_prior_ranking(Self, Array[Int]) -> Bool
 pub fn IndexedRanker::add_ranking(Self, Array[Int]) -> Bool
 pub fn IndexedRanker::compute_ordinal_ranks(Self) -> Array[Int]
 pub fn IndexedRanker::compute_uncertainty(Self, Int, Int, Int) -> Bool

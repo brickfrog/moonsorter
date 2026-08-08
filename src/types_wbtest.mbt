@@ -157,6 +157,37 @@ test "add_ranking rejects degenerate input" {
 }
 
 ///|
+test "priors inform the fit without counting as progress" {
+  let ranker = IndexedRanker::new(4)
+  inspect(ranker.add_prior_ranking([0, 1, 2, 3]), content="true")
+  inspect(ranker.add_prior_ranking([0, 1]), content="true")
+  // The progress strip reports questions the user answered. Seeding from
+  // existing scores answers none, and counting it opened a fresh session
+  // partway along the bar.
+  inspect(ranker.total_comparisons(), content="0")
+  // The ordering must still reach the model, or the priors do nothing at all.
+  inspect(ranker.get_rank_for(0).unwrap(), content="1")
+  inspect(ranker.get_rank_for(3).unwrap(), content="4")
+  // Nothing to undo back to: a prior is not a decision.
+  inspect(ranker.undo_last(), content="false")
+  ignore(ranker.update_single_query(3, 0, AWins))
+  inspect(ranker.total_comparisons(), content="1")
+  // Undoing the one real answer must not unwind the seeded orderings.
+  inspect(ranker.undo_last(), content="true")
+  inspect(ranker.total_comparisons(), content="0")
+  inspect(ranker.get_rank_for(0).unwrap(), content="1")
+}
+
+///|
+test "add_prior_ranking rejects degenerate input" {
+  let ranker = IndexedRanker::new(3)
+  inspect(ranker.add_prior_ranking([]), content="false")
+  inspect(ranker.add_prior_ranking([1]), content="false")
+  inspect(ranker.add_prior_ranking([0, 0]), content="false")
+  inspect(ranker.add_prior_ranking([0, 3]), content="false")
+}
+
+///|
 test "equal strengths rank by item index" {
   let ranker = IndexedRanker::new(4)
   // 0 beats 1 and 2 once each: 1 and 2 hold identical evidence, so they must

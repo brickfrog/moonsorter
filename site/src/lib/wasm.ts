@@ -6,6 +6,7 @@ export type WasmExports = {
   clear_ranking: () => void;
   add_to_ranking: (idx: number) => void;
   commit_ranking: () => boolean;
+  commit_prior_ranking: () => boolean;
   get_next_pair_encoded: (epsilon: number, random: number) => number;
   get_progress_completed: () => number;
   get_progress_estimated: () => number;
@@ -42,6 +43,7 @@ type RawExports = WebAssembly.Exports & {
   clear_ranking: () => void;
   add_to_ranking: (idx: number) => void;
   commit_ranking: () => boolean;
+  commit_prior_ranking: () => boolean;
   get_next_pair_encoded: (epsilon: number, random: number) => number;
   get_progress_completed: () => number;
   get_progress_estimated: () => number;
@@ -96,6 +98,8 @@ function wrapExports(exports: RawExports): WasmExports {
       safeCall('add_to_ranking', () => exports.add_to_ranking(idx)),
     commit_ranking: () =>
       safeCall('commit_ranking', () => exports.commit_ranking()),
+    commit_prior_ranking: () =>
+      safeCall('commit_prior_ranking', () => exports.commit_prior_ranking()),
     get_next_pair_encoded: (epsilon: number, random: number) =>
       safeCall('get_next_pair_encoded', () =>
         exports.get_next_pair_encoded(epsilon, random),

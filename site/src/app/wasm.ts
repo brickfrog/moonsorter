@@ -21,6 +21,24 @@ export function applyRanking(wasm: WasmExports, indices: number[]): boolean {
 }
 
 /**
+ * Seed the model with an ordering the user never answered.
+ *
+ * Same staging as `applyRanking`, but commits through the prior path so the
+ * ordering informs the fit without advancing progress or adding an undo step.
+ */
+export function applyPriorRanking(
+  wasm: WasmExports,
+  indices: number[],
+): boolean {
+  if (indices.length === 0) return true;
+  wasm.clear_ranking();
+  for (const idx of indices) {
+    wasm.add_to_ranking(idx);
+  }
+  return wasm.commit_prior_ranking();
+}
+
+/**
  * Replay one recorded decision.
  *
  * A tie goes through `add_comparison`, which records both orderings as a

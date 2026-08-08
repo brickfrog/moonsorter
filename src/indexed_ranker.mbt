@@ -229,12 +229,41 @@ pub fn IndexedRanker::add_ranking(
     return false
   }
   self.push_history()
+  self.record_ranking(ranking)
+  self.iteration_count = self.iteration_count + 1
+  true
+}
+
+///|
+/// Seed the model with an ordering the user did not answer, such as one
+/// derived from their existing scores.
+///
+/// Deliberately not progress and not undoable. `get_progress` reports how
+/// many questions the user has answered, and a prior answers none of them;
+/// counting priors made a fresh eight-title session open at "2 of ~35". There
+/// is likewise nothing to undo back to, so no history is pushed.
+pub fn IndexedRanker::add_prior_ranking(
+  self : IndexedRanker,
+  ranking : Array[Int],
+) -> Bool {
+  if !self.valid_ranking(ranking) {
+    return false
+  }
+  self.record_ranking(ranking)
+  true
+}
+
+///|
+/// Store one ordering and refit. Shared by the answered and prior paths so
+/// the two cannot drift in how they touch the model.
+fn IndexedRanker::record_ranking(
+  self : IndexedRanker,
+  ranking : Array[Int],
+) -> Unit {
   // Copy: the caller keeps ownership of `ranking` and may reuse the buffer.
   self.events.push({ items: ranking.copy() })
-  self.iteration_count = self.iteration_count + 1
   self.uncertainty_ready = false
   self.fit()
-  true
 }
 
 ///|

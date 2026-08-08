@@ -59,6 +59,25 @@ pub fn commit_ranking() -> Bool {
 }
 
 ///|
+/// Commit the staged ordering as a prior rather than as an answer.
+///
+/// Same model effect as `commit_ranking`, but it does not advance progress
+/// and cannot be undone. Used for the orderings derived from existing scores.
+pub fn commit_prior_ranking() -> Bool {
+  match ranker.val {
+    Some(r) => {
+      let ok = r.add_prior_ranking(pending_ranking)
+      pending_ranking.clear()
+      ok
+    }
+    None => {
+      pending_ranking.clear()
+      false
+    }
+  }
+}
+
+///|
 /// Get the next pair encoded as a single integer.
 /// Uses epsilon-greedy exploration when epsilon > 0.
 /// Returns -1 when there is no pair.

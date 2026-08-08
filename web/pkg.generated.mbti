@@ -8,6 +8,8 @@ pub fn add_to_ranking(Int) -> Unit
 
 pub fn clear_ranking() -> Unit
 
+pub fn commit_prior_ranking() -> Bool
+
 pub fn commit_ranking() -> Bool
 
 pub fn compute_tiers(Int) -> Int

@@ -16,6 +16,7 @@ options(
         "clear_ranking",
         "add_to_ranking",
         "commit_ranking",
+        "commit_prior_ranking",
         "get_next_pair_encoded",
         "get_progress_completed",
         "get_progress_estimated",

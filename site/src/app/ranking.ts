@@ -6,7 +6,7 @@ import { state } from './state';
 import { saveState } from './storage';
 import { showStep } from './steps';
 import { updateProgress } from './progress';
-import { ensureWasm, applyRanking, applyHistoryEntry, resolvePairPolicy } from './wasm';
+import { ensureWasm, applyPriorRanking, applyHistoryEntry, resolvePairPolicy } from './wasm';
 import { enterActiveStep } from './mode';
 
 function applyAnalysisDefaults(total: number) {
@@ -171,7 +171,7 @@ export async function startRanking(options: StartOptions) {
   if (state.priorComparisons.length > 0) {
     console.info('[rank] applying priors', state.priorComparisons.length);
     state.priorComparisons.forEach((entry) => {
-      const ok = applyRanking(wasmApi, entry.indices);
+      const ok = applyPriorRanking(wasmApi, entry.indices);
       if (!ok) {
         console.warn('[rank] failed to apply prior', entry);
       }
