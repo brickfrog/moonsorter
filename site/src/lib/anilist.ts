@@ -14,7 +14,10 @@ type AniListTitle = {
 type AniListMedia = {
   id: number;
   title: AniListTitle;
-  coverImage?: { medium?: string };
+  coverImage?: { medium?: string; extraLarge?: string };
+  format?: string | null;
+  episodes?: number | null;
+  chapters?: number | null;
 };
 
 type AniListEntry = {
@@ -22,6 +25,10 @@ type AniListEntry = {
   score: number;
   title: string;
   coverImage?: string;
+  coverArt?: string;
+  format?: string;
+  episodes?: number;
+  chapters?: number;
   airedYear?: number;
   seasonYear?: number;
   startedAtYear?: number;
@@ -136,7 +143,10 @@ export async function fetchMediaList(
           media {
             id
             title { romaji english native }
-            coverImage { medium }
+            coverImage { medium extraLarge }
+            format
+            episodes
+            chapters
             startDate { year }
             seasonYear
           }
@@ -176,6 +186,11 @@ export async function fetchMediaList(
         score: entry.score || 0,
         title: pickTitle(entry.media.title),
         coverImage: entry.media.coverImage?.medium,
+        coverArt:
+          entry.media.coverImage?.extraLarge ?? entry.media.coverImage?.medium,
+        format: entry.media.format ?? undefined,
+        episodes: entry.media.episodes ?? undefined,
+        chapters: entry.media.chapters ?? undefined,
         airedYear: entry.media.startDate?.year ?? undefined,
         seasonYear: entry.media.seasonYear ?? undefined,
         startedAtYear: entry.startedAt?.year ?? undefined,

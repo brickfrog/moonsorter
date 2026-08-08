@@ -170,6 +170,9 @@ export function parseCsvEntries(text: string): Entry[] {
       completedAtYear: parseOptionalInt(completedRaw?.slice(0, 4)),
       updatedAtYear: parseOptionalInt(updatedRaw?.slice(0, 4)),
       coverImage: coverRaw || undefined,
+      // A CSV gives one URL; use it for both the tier thumbnail and the
+      // Compare poster rather than leaving the panel art-less.
+      coverArt: coverRaw || undefined,
     });
   }
 

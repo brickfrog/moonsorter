@@ -42,36 +42,29 @@ export function updateGroupCoverage() {
 }
 
 function paintProgress(completed: number, estimated: number) {
-  if (!dom.progressText || !dom.progressFill || !dom.progressMeta) return;
+  if (!dom.progressCount || !dom.progressFill) return;
   const pct =
     estimated > 0 ? Math.min(100, Math.round((completed / estimated) * 100)) : 0;
   dom.progressFill.style.width = `${pct}%`;
 
-  const track = document.querySelector('[data-progress-track]');
-  if (track) {
-    track.setAttribute('aria-valuenow', pct.toString());
-    track.setAttribute(
+  if (dom.progressTrack) {
+    dom.progressTrack.setAttribute('aria-valuenow', pct.toString());
+    dom.progressTrack.setAttribute(
       'aria-valuetext',
       estimated > 0 ? `${completed} of ${estimated} comparisons` : 'No comparisons are complete yet.',
     );
   }
 
-  // Color code based on completion percentage
-  dom.progressFill.classList.remove('progress-low', 'progress-medium', 'progress-high');
-  if (pct < 30) {
-    dom.progressFill.classList.add('progress-low');
-  } else if (pct < 70) {
-    dom.progressFill.classList.add('progress-medium');
-  } else {
-    dom.progressFill.classList.add('progress-high');
-  }
+  dom.progressCount.textContent = `${completed} of ~${estimated} answered`;
 
-  dom.progressText.textContent = `${completed} / ${estimated} comparisons`;
-  const metaSpan = dom.progressMeta.querySelector('span');
-  if (metaSpan) {
-    metaSpan.textContent = `Estimated total: ${estimated} comparisons`;
-  } else {
-    dom.progressMeta.textContent = `Estimated total: ${estimated} comparisons`;
+  if (dom.progressCI) {
+    // The bootstrap only produces a median width once an analysis has run;
+    // until then the design omits the figure rather than showing a placeholder.
+    const ranker = state.wasm;
+    dom.progressCI.textContent =
+      ranker && ranker.get_uncertainty_ready()
+        ? `median CI ±${ranker.get_uncertainty_median_width()}`
+        : '';
   }
 }
 

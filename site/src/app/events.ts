@@ -2,16 +2,17 @@ import { login, logout, getToken } from '../lib/auth';
 import { updateScores } from '../lib/anilist';
 import { setStatus } from '../lib/utils';
 import { demoItems } from '../lib/demo';
-import { dom, type StepKey } from './dom';
+import { dom, type NavTarget } from './dom';
 import { state } from './state';
-import { showStep, navigateStep } from './steps';
+import { showView, navigateView } from './views';
 import { handleChoice, undoLast, redoLast, renderPair } from './comparison';
 import { showResults, renderResultsTable } from './results';
 import { renderTierList, downloadTierListImage } from './tier-list';
 import { submitSort, skipSort, startGroupSort } from './group';
-import { setImportPath, applyModeSelection, enterActiveStep } from './mode';
+import { setImportPath, applyModeSelection, enterActiveStep, updateAuthUi } from './mode';
 import { readMediaType } from './config';
 import { handleImport, handleCsvImport } from './import';
+import { updateListView } from './list';
 import { resumeSession, clearSession, performClearSession } from './session';
 import {
   buildUploadPayload,
@@ -25,7 +26,7 @@ import { runAnalysis, handleFinish } from './analysis';
 import { startRanking } from './ranking';
 import { closeModal, isAnyModalOpen } from './modal';
 import { saveState } from './storage';
-import type { RankGoal, RankMode } from '../lib/types';
+import type { RankMode } from '../lib/types';
 
 export function setupEvents() {
   // Choice buttons for pairwise comparison
@@ -40,12 +41,12 @@ export function setupEvents() {
 
   // Keyboard shortcuts for comparison
   document.addEventListener('keydown', (event) => {
-    if (dom.steps.compare?.classList.contains('hidden')) return;
+    if (dom.views.compare?.classList.contains('hidden')) return;
     // A .modal-overlay is `fixed inset-0`, which blocks the pointer but not
     // the keyboard; without this the shortcuts keep firing behind a dialog.
     if (isAnyModalOpen()) return;
-    // Let focused controls (the tier-list checkbox, the action buttons) keep
-    // their own Space/Enter behaviour.
+    // Let focused controls (the action buttons) keep their own Space/Enter
+    // behaviour.
     if (
       event.target instanceof HTMLElement &&
       event.target.closest('input, button, select, textarea')
@@ -71,14 +72,23 @@ export function setupEvents() {
     }
   });
 
-  // Stepper navigation buttons
-  dom.stepperButtons.forEach((button) => {
+  // Top-bar view navigation
+  dom.navButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const target = button.getAttribute('data-step-target') as StepKey | null;
+      const target = button.getAttribute('data-view-target') as NavTarget | null;
       if (!target) return;
-      navigateStep(target);
+      navigateView(target);
     });
   });
+
+  // Start comparing button
+  if (dom.startButton) {
+    dom.startButton.addEventListener('click', () => {
+      const selected = dom.methodRadios.find((radio) => radio.checked);
+      const mode = selected?.getAttribute('data-rank-mode') as RankMode | null;
+      applyModeSelection(mode ?? 'pairwise');
+    });
+  }
 
   // Connect buttons
   document.querySelectorAll('[data-action="connect"]').forEach((button) => {
@@ -87,7 +97,7 @@ export function setupEvents() {
         login();
       } catch (error) {
         setStatus(
-          dom.connectStatus,
+          dom.listStatus,
           error instanceof Error ? error.message : 'The client ID is missing. Set PUBLIC_ANILIST_CLIENT_ID in .env',
         );
       }
@@ -98,8 +108,12 @@ export function setupEvents() {
   document.querySelectorAll('[data-action="csv"]').forEach((button) => {
     button.addEventListener('click', () => {
       setImportPath('csv');
-      showStep('import');
-      setStatus(dom.importStatus, 'Select a CSV file to start.');
+      showView('list');
+      // The file input sits in the collapsed Advanced panel. Pointing at a
+      // control the reader cannot see is how the old flow lost people.
+      dom.csvFile?.closest('details')?.setAttribute('open', '');
+      dom.csvFile?.focus();
+      setStatus(dom.listStatus, 'Select a CSV file, then press Import from CSV.');
     });
   });
 
@@ -118,7 +132,10 @@ export function setupEvents() {
       };
       state.currentFilters = {};
       state.modeChosen = false;
-      showStep('mode');
+      state.listSource = 'demo list';
+      updateListView();
+      showView('list');
+      setStatus(dom.listStatus, 'The demo list is ready. Press Start comparing.');
     });
   });
 
@@ -135,28 +152,13 @@ export function setupEvents() {
   }
 
   // Logout button
-  const logoutButton = document.querySelector('[data-action="logout"]');
+  const logoutButton = dom.logoutButton;
   if (logoutButton) {
     logoutButton.addEventListener('click', () => {
       logout();
-      setStatus(dom.importStatus, 'Moonsorter disconnected from AniList.');
-      showStep('connect');
-    });
-  }
-
-  // Back to import button
-  const backToImportButton = document.querySelector('[data-action="back-to-import"]');
-  if (backToImportButton) {
-    backToImportButton.addEventListener('click', () => {
-      showStep('import');
-    });
-  }
-
-  // Back to connect button
-  const backToConnectButton = document.querySelector('[data-action="back-to-connect"]');
-  if (backToConnectButton) {
-    backToConnectButton.addEventListener('click', () => {
-      showStep('connect');
+      updateAuthUi();
+      setStatus(dom.listStatus, 'Moonsorter disconnected from AniList.');
+      showView('list');
     });
   }
 
@@ -231,12 +233,12 @@ export function setupEvents() {
     uploadButton.addEventListener('click', async () => {
       const token = getToken();
       if (!token) {
-        setStatus(dom.connectStatus, 'Connect to AniList first.');
+        setStatus(dom.uploadStatus, 'Connect to AniList first.');
         return;
       }
       const updates = buildUploadPayload();
       if (!updates.length) {
-        setStatus(dom.importStatus, 'You did not select any titles to upload.');
+        setStatus(dom.uploadStatus, 'You did not select any titles to upload.');
         return;
       }
       uploadButton.disabled = true;
@@ -250,11 +252,11 @@ export function setupEvents() {
           },
         });
         uploadButton.textContent = 'Uploaded';
-        setStatus(dom.importStatus, `Moonsorter uploaded ${updates.length} scores.`);
+        setStatus(dom.uploadStatus, `Moonsorter uploaded ${updates.length} scores.`);
       } catch (error) {
-        uploadButton.textContent = 'Upload selected';
+        uploadButton.textContent = 'Upload to AniList';
         setStatus(
-          dom.importStatus,
+          dom.uploadStatus,
           error instanceof Error ? error.message : 'The upload failed. Try the upload again.',
         );
       } finally {
@@ -291,18 +293,16 @@ export function setupEvents() {
       sessionFile.value = '';
       const saved = loadSessionFile(await file.text());
       if (!saved) {
-        setStatus(dom.sessionStatus, 'That file is not a valid session.');
+        setStatus(dom.listStatus, 'That file is not a valid session.');
         return;
       }
       try {
+        state.listSource = 'saved session';
         await startRanking(sessionStartOptions(saved));
-        if (dom.optInTierList && saved.optInTierList !== undefined) {
-          dom.optInTierList.checked = saved.optInTierList;
-        }
-        setStatus(dom.sessionStatus, `Moonsorter loaded ${saved.items.length} titles from the file.`);
+        setStatus(dom.listStatus, `Moonsorter loaded ${saved.items.length} titles from the file.`);
       } catch (error) {
         setStatus(
-          dom.sessionStatus,
+          dom.listStatus,
           error instanceof Error ? error.message : 'Moonsorter did not load that session. Select a different file.',
         );
       }
@@ -354,22 +354,12 @@ export function setupEvents() {
     runAnalysisButton.addEventListener('click', runAnalysis);
   }
 
-  // Mode selection buttons
-  document.querySelectorAll('[data-rank-mode]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const goal = button.getAttribute('data-rank-goal') as RankGoal | null;
-      const mode = button.getAttribute('data-rank-mode') as RankMode | null;
-      if (!goal || !mode) return;
-      applyModeSelection(goal, mode);
-    });
-  });
-
   // Resume comparisons button
   const resumeComparisonsButton = document.querySelector('[data-action="resume-comparisons"]');
   if (resumeComparisonsButton) {
     resumeComparisonsButton.addEventListener('click', () => {
       if (state.rankMode === 'pairwise' || state.rankPhase === 'pairwise') {
-        showStep('compare');
+        showView('compare');
         renderPair();
         return;
       }
@@ -382,7 +372,7 @@ export function setupEvents() {
   if (restartButton) {
     restartButton.addEventListener('click', () => {
       clearSession();
-      showStep(getToken() ? 'import' : 'connect');
+      showView('list');
     });
   }
 

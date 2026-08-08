@@ -3,369 +3,236 @@ import Layout from '../layouts/Layout.astro';
 import Comparison from '../components/Comparison.astro';
 import SortGroup from '../components/SortGroup.astro';
 import Rankings from '../components/Rankings.astro';
-import TierList from '../components/TierList.astro';
 ---
 <Layout>
-  <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
-    <div class="space-y-5">
-      <div class="pill">Ranking session</div>
-      <h2 class="text-3xl font-display md:text-4xl">
-        Rank your list, one pair at a time.
-      </h2>
-      <p class="text-latte-subtext1">
-        Import your list from AniList or from a CSV file. Then answer "A or B?" until you are done. Progress saves automatically.
+  {/*
+    The List view starts hidden like every other view: the loading note below
+    is what the reader sees until `rank.ts` runs and calls `showView`. Showing
+    the list first would promise controls that do nothing until the WASM
+    module and the event bindings are in place.
+  */}
+  <section class="view view-list hidden" data-view="list">
+    <div class="list-main">
+      <h1 class="list-headline" data-list-headline>
+        Your titles. A handful of questions. One ranking you'll actually stand behind.
+      </h1>
+      <p class="list-lede">
+        Moonsorter fits a Plackett–Luce model to your answers and reports how sure it is.
+        Import from AniList or a CSV, answer A or B, stop whenever the intervals are tight enough.
       </p>
+
+      <div class="list-actions">
+        <button class="btn btn-lg" type="button" data-action="start" disabled>
+          Start comparing
+        </button>
+        <button class="btn-ghost btn-lg" type="button" data-action="connect" data-requires="disconnected">
+          Connect AniList
+        </button>
+        <button class="btn-ghost btn-lg" type="button" data-action="import" data-anilist-only data-requires="connected">
+          Import from AniList
+        </button>
+        <button class="btn-ghost btn-lg" type="button" data-action="csv">
+          Upload CSV
+        </button>
+        <button class="btn-ghost btn-lg" type="button" data-action="import-csv" data-csv-only>
+          Import from CSV
+        </button>
+        <button class="btn-ghost btn-lg" type="button" data-action="demo">
+          Use the demo list
+        </button>
+      </div>
+
+      <p class="status-slot list-status" data-list-status role="status" aria-live="polite"></p>
+
+      <div class="list-table-head">
+        <span class="eyebrow">Your list<span data-list-count></span></span>
+        <span class="eyebrow">Seed score</span>
+      </div>
+      <div data-list-body>
+        <p class="list-empty">Nothing imported yet.</p>
+      </div>
     </div>
-    <div class="card space-y-4">
-      <h3 class="text-lg font-display">Session controls</h3>
-      <p class="text-sm text-latte-subtext1">
-        Keep a tab open while you compare. Resume the session at any time.
-      </p>
-      <div class="flex flex-wrap gap-3">
-        <button class="btn-secondary" type="button" data-action="resume">
-          Resume saved session
-        </button>
-        <button class="btn-secondary" type="button" data-action="clear">
-          Clear saved session
-        </button>
-        <label class="btn-secondary session-import">
-          Load .session file
-          <input
-            class="visually-hidden"
-            type="file"
-            accept=".session,application/json"
-            data-session-file
-          />
+
+    <aside class="list-aside">
+      <div class="aside-group">
+        <span class="eyebrow">Method</span>
+        <label class="method-option">
+          <input type="radio" name="rank-method" data-rank-mode="pairwise" checked />
+          <span>
+            <span class="method-title">Pairwise</span>
+            <span class="method-desc">A or B, chosen by expected information gain.</span>
+          </span>
+        </label>
+        <label class="method-option">
+          <input type="radio" name="rank-method" data-rank-mode="group" />
+          <span>
+            <span class="method-title">Group sort</span>
+            <span class="method-desc">Drag batches of five into order.</span>
+          </span>
+        </label>
+        <label class="method-option">
+          <input type="radio" name="rank-method" data-rank-mode="group-pairwise" />
+          <span>
+            <span class="method-title">Group, then refine</span>
+            <span class="method-desc">Batches first, pairs for the close calls.</span>
+          </span>
         </label>
       </div>
-      <p class="text-xs text-latte-subtext0" data-session-status role="status" aria-live="polite"></p>
-    </div>
-  </section>
 
-  <section class="card stepper">
-    <!-- A stepper is a progress indicator, not a tab set: the buttons control
-         which section is shown but there are no tabpanels. `aria-current` on
-         the active step conveys position without inventing tab semantics. -->
-    <nav class="stepper-track" aria-label="Ranking steps">
-      <button class="stepper-item" type="button" data-step-target="connect">
-        <span class="stepper-number">1</span>
-        <span class="stepper-label">Connect</span>
-      </button>
-      <button class="stepper-item" type="button" data-step-target="import">
-        <span class="stepper-number">2</span>
-        <span class="stepper-label">Import</span>
-      </button>
-      <button class="stepper-item" type="button" data-step-target="mode">
-        <span class="stepper-number">3</span>
-        <span class="stepper-label">Mode</span>
-      </button>
-      <button class="stepper-item" type="button" data-step-target="compare">
-        <span class="stepper-number">4</span>
-        <span class="stepper-label">Compare</span>
-      </button>
-      <button class="stepper-item" type="button" data-step-target="results">
-        <span class="stepper-number">5</span>
-        <span class="stepper-label">Results</span>
-      </button>
-    </nav>
-    <p class="text-xs text-latte-subtext0" data-stepper-status role="status" aria-live="polite"></p>
-  </section>
+      <div class="aside-group">
+        <span class="eyebrow">Priors</span>
+        {/*
+          This checkbox carries the whole rescore-vs-scratch decision now. With
+          it on, your current scores seed the model; with it off the ranking
+          starts from nothing. The method radios above are unaffected either
+          way — they choose the interaction style and nothing else.
+        */}
+        <label class="check-row">
+          <input id="use-score-prior" type="checkbox" checked />
+          <span>Use existing scores as priors</span>
+        </label>
+        <label class="check-row">
+          <input id="include-unscored" type="checkbox" />
+          <span>Include unscored titles</span>
+        </label>
+        <label class="check-row">
+          <input id="preserve-range" type="checkbox" checked />
+          <span>Keep original score range</span>
+        </label>
+      </div>
 
-  <section class="card rank-loading" data-rank-loading>
-    <div class="pill mb-3">Session setup</div>
-    <h3 class="text-xl font-display">Moonsorter loads the ranking tools.</h3>
-    <p class="text-sm text-latte-subtext1">
-      Moonsorter reads your saved progress and prepares the session.
-    </p>
-    <div class="loading-bar mt-4"></div>
-  </section>
-
-  <section class="card hidden" data-step="connect">
-    <div class="pill mb-3">Step 1: Connect</div>
-    <h3 class="text-xl font-display">Connect your source</h3>
-    <p class="text-sm text-latte-subtext1 mb-4">
-      Connect to AniList to import your list and to upload your scores. You can also use a CSV file or the demo list.
-    </p>
-    <div class="flex flex-wrap gap-3">
-      <button class="btn btn-anilist" type="button" data-action="connect">
-        <svg class="h-5 w-5" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="512" height="512" fill="#1e2630"/>
-          <path d="M321.92 323.27V136.6c0-10.698-5.887-16.602-16.558-16.602h-36.433c-10.672 0-16.561 5.904-16.561 16.602v88.651c0 2.497 23.996 14.089 24.623 16.541 18.282 71.61 3.972 128.92-13.359 131.6 28.337 1.405 31.455 15.064 10.348 5.731 3.229-38.209 15.828-38.134 52.049-1.406.31.317 7.427 15.282 7.87 15.282h85.545c10.672 0 16.558-5.9 16.558-16.6v-36.524c0-10.698-5.886-16.602-16.558-16.602z" fill="#02a9ff"/>
-          <path d="M170.68 120 74.999 393h74.338l16.192-47.222h80.96L262.315 393h73.968l-95.314-273zm11.776 165.28 23.183-75.629 25.393 75.629z" fill="#fefefe"/>
-        </svg>
-        <span>Connect to AniList</span>
-      </button>
-      <button class="btn-secondary" type="button" data-action="csv">
-        Use a CSV file
-      </button>
-      <button class="btn-secondary" type="button" data-action="demo">
-        Use the demo list
-      </button>
-    </div>
-    <p class="text-xs text-latte-subtext0" data-connect-status role="status" aria-live="polite"></p>
-  </section>
-
-  <section class="card hidden" data-step="import">
-    <div class="pill mb-3">Step 2: Import</div>
-    <h3 class="text-xl font-display" data-import-title>Import your list</h3>
-    <p class="text-sm text-latte-subtext1 mb-4" data-import-desc>
-      Import your titles from AniList, or import a CSV file. Then select how many titles to rank now.
-    </p>
-    <!-- A plain grid, not a form: these controls are read by the import
-         buttons below and there is nothing to submit. As a <form> it had no
-         action, so an implicit submission would GET-navigate to `?` and wipe
-         the session; only the field count was suppressing that. -->
-    <div class="grid gap-4 md:grid-cols-2">
-      <!-- CSV-only: file input -->
-      <label class="col-span-full" data-import-path="csv">
-        CSV file with the columns title, score, and media_id (media_id is optional)
-        <input id="csv-file" type="file" accept=".csv,text/csv" />
-      </label>
-
-      <!-- AniList-only fields -->
-      <label class="col-span-full" data-import-path="anilist">
-        Media type
-        <select id="media-type">
-          <option value="ANIME">Anime</option>
-          <option value="MANGA">Manga</option>
-        </select>
-      </label>
-      <label data-import-path="anilist">
-        Import mode
-        <select id="import-mode">
-          <option value="all">All completed and current titles</option>
-          <option value="top">Top slice only</option>
-          <option value="bottom">Bottom slice only</option>
-          <option value="top-bottom">Top and bottom slice</option>
-        </select>
-      </label>
-      <label data-import-path="anilist">
-        Slice size (for the top and bottom modes)
-        <input id="import-count" type="number" min="5" max="100" value="20" />
-      </label>
-      <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
-        <input id="include-unscored" type="checkbox" />
-        <span>Include the unscored titles</span>
-      </label>
-      <label class="flex items-center gap-2 text-sm text-latte-subtext1">
-        <input id="use-score-prior" type="checkbox" checked />
-        <span>Use the original scores as priors</span>
-      </label>
-      <label class="flex items-center gap-2 text-sm text-latte-subtext1" data-import-path="anilist">
-        <input id="preserve-range" type="checkbox" checked />
-        <span>Keep the original score range on upload</span>
-      </label>
-      <label data-import-path="anilist">
-        Score scale
-        <select id="score-format">
-          <option value="AUTO">Use the AniList format (automatic)</option>
-          <option value="POINT_100">100-point</option>
-          <option value="POINT_10_DECIMAL">10-point (decimal)</option>
-          <option value="POINT_10">10-point</option>
-          <option value="POINT_5">5-point</option>
-          <option value="POINT_3">3-point</option>
-        </select>
-      </label>
-
-      <!-- AniList-only: year filters -->
-      <label data-import-path="anilist">
-        Aired year (from and to)
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <input id="filter-aired-from" type="number" min="1900" step="1" />
-          <input id="filter-aired-to" type="number" min="1900" step="1" />
-        </div>
-      </label>
-      <label data-import-path="anilist">
-        Started year (from and to)
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <input id="filter-started-from" type="number" min="1900" step="1" />
-          <input id="filter-started-to" type="number" min="1900" step="1" />
-        </div>
-      </label>
-      <label data-import-path="anilist">
-        Completed year (from and to)
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <input id="filter-completed-from" type="number" min="1900" step="1" />
-          <input id="filter-completed-to" type="number" min="1900" step="1" />
-        </div>
-      </label>
-      <label data-import-path="anilist">
-        List updated year (from and to)
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <input id="filter-updated-from" type="number" min="1900" step="1" />
-          <input id="filter-updated-to" type="number" min="1900" step="1" />
-        </div>
-      </label>
-
-      <!-- Advanced options (collapsed) -->
-      <details class="col-span-full">
-        <summary class="cursor-pointer text-sm font-semibold text-latte-subtext0 hover:text-latte-text">
-          Advanced options
-        </summary>
-        <div class="mt-3 grid gap-4 md:grid-cols-2">
-          <label>
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="advanced-body">
+          <label class="inline-field" data-anilist-only>
+            Media type
+            <select id="media-type">
+              <option value="ANIME">Anime</option>
+              <option value="MANGA">Manga</option>
+            </select>
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Import mode
+            <select id="import-mode">
+              <option value="all">All titles</option>
+              <option value="top">Top slice</option>
+              <option value="bottom">Bottom slice</option>
+              <option value="top-bottom">Top and bottom</option>
+            </select>
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Slice size
+            <input id="import-count" type="number" min="5" max="100" value="20" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Score scale
+            <select id="score-format">
+              <option value="AUTO">Use the AniList format (automatic)</option>
+              <option value="POINT_100">100-point</option>
+              <option value="POINT_10_DECIMAL">10-point (decimal)</option>
+              <option value="POINT_10">10-point</option>
+              <option value="POINT_5">5-point</option>
+              <option value="POINT_3">3-point</option>
+            </select>
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Aired from
+            <input id="filter-aired-from" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Aired to
+            <input id="filter-aired-to" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Started from
+            <input id="filter-started-from" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Started to
+            <input id="filter-started-to" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Completed from
+            <input id="filter-completed-from" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            Completed to
+            <input id="filter-completed-to" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            List updated from
+            <input id="filter-updated-from" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field" data-anilist-only>
+            List updated to
+            <input id="filter-updated-to" type="number" min="1900" step="1" />
+          </label>
+          <label class="inline-field">
+            Goal without priors
+            <select id="scratch-goal">
+              <option value="full">Rank all the titles</option>
+              <option value="top-k">Find the top tier quickly</option>
+            </select>
+          </label>
+          <label class="inline-field">
             <span class="inline-flex items-center gap-2">
-              Exploration rate (epsilon)
+              Exploration rate
               <span class="help-dot" title="This value sets how frequently Moonsorter asks a random comparison instead of the most informative pair.">?</span>
             </span>
-            <input
-              id="exploration-epsilon"
-              type="number"
-              min="0"
-              max="1"
-              step="0.01"
-              value="0.1"
-            />
+            <input id="exploration-epsilon" type="number" min="0" max="1" step="0.01" value="0.1" />
           </label>
-          <label>
+          <label class="inline-field">
             <span class="inline-flex items-center gap-2">
               Uncertainty prior
               <span class="help-dot" title="This value regularizes the uncertainty scores. A high value makes the pair selection less sensitive to sparse data.">?</span>
             </span>
             <input id="uncertainty-prior" type="number" min="0.1" step="0.1" value="1" />
           </label>
+          <label data-csv-only>
+            CSV file
+            <input id="csv-file" type="file" accept=".csv,text/csv" />
+          </label>
+          <p class="field-note" data-csv-only>
+            The file needs a title column and a score column. A media_id column is optional.
+          </p>
+          <div class="list-actions mt-3" data-anilist-only data-requires="connected">
+            <button class="btn-ghost" type="button" data-action="logout">
+              Disconnect AniList
+            </button>
+          </div>
         </div>
       </details>
-    </div>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <button class="btn" type="button" data-action="import" data-import-path="anilist">
-        Import from AniList
-      </button>
-      <button class="btn" type="button" data-action="import-csv" data-import-path="csv">
-        Import from CSV
-      </button>
-      <button class="btn-secondary" type="button" data-action="logout" data-import-path="anilist">
-        Disconnect
-      </button>
-      <button class="btn-secondary" type="button" data-action="back-to-connect">
-        Back
-      </button>
-    </div>
-    <p class="text-xs text-latte-subtext0 mt-3" data-import-status role="status" aria-live="polite"></p>
+
+      <div class="aside-foot">
+        <p>Session saves to this browser after every answer.</p>
+        <div class="list-actions mt-3">
+          <label class="btn-ghost">
+            Restore a .session file
+            <input
+              class="visually-hidden"
+              type="file"
+              accept=".session,application/json"
+              data-session-file
+            />
+          </label>
+          <button class="btn-ghost" type="button" data-action="resume">
+            Resume saved session
+          </button>
+          <button class="btn-ghost" type="button" data-action="clear">
+            Clear saved session
+          </button>
+        </div>
+      </div>
+    </aside>
   </section>
 
-  <section class="card hidden" data-step="mode">
-    <div class="pill mb-3">Step 3: Select mode</div>
-    <h3 class="text-xl font-display">Select how you want to rank</h3>
-    <p class="text-sm text-latte-subtext1 mb-4">
-      This selection changes only the interaction style. The model stays the same.
-    </p>
-    <div class="space-y-4">
-      <div class="card-muted space-y-3">
-        <div class="pill">Rescore an existing list</div>
-        <p class="text-sm text-latte-subtext1">
-          These modes keep your current order.
-          They change only the titles that are in the wrong position.
-        </p>
-        <div class="grid gap-3 md:grid-cols-2">
-          <button
-            class="mode-card"
-            type="button"
-            data-rank-goal="rescore"
-            data-rank-mode="pairwise"
-          >
-            <span class="font-semibold text-latte-text">Pairwise only</span>
-            <span class="text-xs text-latte-subtext0">
-              Moonsorter uses A/B comparisons with strong priors from your scores.
-            </span>
-          </button>
-          <button
-            class="mode-card"
-            type="button"
-            data-rank-goal="rescore"
-            data-rank-mode="group"
-          >
-            <span class="font-semibold text-latte-text">Group sort only</span>
-            <span class="text-xs text-latte-subtext0">
-              Drag small batches into order.
-              This mode is good when you must change many positions.
-            </span>
-          </button>
-        </div>
-      </div>
-      <div class="card-muted space-y-3">
-        <div class="pill">Rank from scratch</div>
-        <p class="text-sm text-latte-subtext1">
-          These modes build a new order. They ignore your prior scores.
-        </p>
-        <label class="text-sm text-latte-subtext1">
-          Goal
-          <select id="scratch-goal">
-            <option value="full">Rank all the titles</option>
-            <option value="top-k">Find the top tier quickly</option>
-          </select>
-        </label>
-        <div class="grid gap-3 md:grid-cols-3">
-          <button
-            class="mode-card"
-            type="button"
-            data-rank-goal="scratch"
-            data-rank-mode="pairwise"
-          >
-            <span class="font-semibold text-latte-text">Pairwise only</span>
-            <span class="text-xs text-latte-subtext0">
-              Moonsorter uses A/B comparisons for the full list. This mode is slow and steady.
-            </span>
-          </button>
-          <button
-            class="mode-card"
-            type="button"
-            data-rank-goal="scratch"
-            data-rank-mode="group"
-          >
-            <span class="font-semibold text-latte-text">Group sort only</span>
-            <span class="text-xs text-latte-subtext0">
-              Moonsorter builds the order from group sorts. This mode is faster.
-            </span>
-          </button>
-          <button
-            class="mode-card"
-            type="button"
-            data-rank-goal="scratch"
-            data-rank-mode="group-pairwise"
-          >
-            <span class="font-semibold text-latte-text">
-              Group sort → Pairwise refine
-            </span>
-            <span class="text-xs text-latte-subtext0">
-              Moonsorter starts with group sorts. Then you refine the order with A/B comparisons.
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="mt-4 flex flex-wrap gap-3">
-      <button class="btn-secondary" type="button" data-action="back-to-import">
-        Back to import
-      </button>
-    </div>
+  <section class="view loading-note" data-loading>
+    <p class="field-note">Moonsorter loads the ranking tools.</p>
   </section>
 
   <Comparison />
   <SortGroup />
-
-  <section class="hidden compare-actions-bar" data-step="compare-actions">
-    <div class="compare-actions-left">
-      <button class="btn-secondary btn-with-kbd" type="button" data-action="undo">
-        <span>Undo</span><span class="kbd-badge kbd-hint">U</span>
-      </button>
-      <button class="btn-secondary btn-with-kbd" type="button" data-action="redo" disabled>
-        <span>Redo</span><span class="kbd-badge kbd-hint">^Y</span>
-      </button>
-      <button class="btn" type="button" data-action="finish">
-        Finish and review
-      </button>
-      <label class="inline-tier-toggle">
-        <input id="opt-in-tier-list" type="checkbox" checked />
-        <span>Generate tier list</span>
-      </label>
-    </div>
-    <div class="compare-actions-right kbd-hint">
-      <span class="kbd-ref"><span class="kbd-badge">A</span>/<span class="kbd-badge">←</span> left</span>
-      <span class="kbd-ref"><span class="kbd-badge">B</span>/<span class="kbd-badge">→</span> right</span>
-      <span class="kbd-ref"><span class="kbd-badge">␣</span> tie</span>
-    </div>
-  </section>
+  <Rankings />
 
   <!-- Early finish warning modal -->
   <div
@@ -377,12 +244,12 @@ import TierList from '../components/TierList.astro';
     aria-describedby="early-finish-message"
   >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2" id="early-finish-title">Results can be unreliable</h3>
-      <p class="text-sm text-latte-subtext1 mb-4" id="early-finish-message" data-early-finish-message>
+      <h3 id="early-finish-title">Results can be unreliable</h3>
+      <p class="modal-body" id="early-finish-message" data-early-finish-message>
         <!-- Message will be filled by JS -->
       </p>
-      <div class="flex gap-3">
-        <button class="btn-secondary" type="button" data-action="cancel-finish">
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" data-action="cancel-finish">
           Continue the comparisons
         </button>
         <button class="btn" type="button" data-action="confirm-finish">
@@ -402,12 +269,12 @@ import TierList from '../components/TierList.astro';
     aria-describedby="start-over-message"
   >
     <div class="modal-card">
-      <h3 class="text-lg font-display mb-2" id="start-over-title">Start again?</h3>
-      <p class="text-sm text-latte-subtext1 mb-4" id="start-over-message">
+      <h3 id="start-over-title">Start again?</h3>
+      <p class="modal-body" id="start-over-message">
         This action will clear all comparisons and rankings. You cannot undo this action.
       </p>
-      <div class="flex gap-3">
-        <button class="btn-secondary" type="button" data-action="cancel-start-over">
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" data-action="cancel-start-over">
           Cancel
         </button>
         <button class="btn" type="button" data-action="confirm-start-over">
@@ -416,9 +283,6 @@ import TierList from '../components/TierList.astro';
       </div>
     </div>
   </div>
-
-  <Rankings />
-  <TierList />
 
   <script>
     import '../app/rank.ts';

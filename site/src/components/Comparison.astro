@@ -1,70 +1,8 @@
 ---
-const { left = 'Item A', right = 'Item B' } = Astro.props;
 ---
-<section class="hidden compare-section" data-step="compare">
-  <header class="compare-header">
-    <div class="compare-header-left">
-      <div class="pill">Step 4: Compare</div>
-      <div class="pill compare-strategy hidden" data-pair-strategy></div>
-    </div>
-    <div class="compare-header-right">
-      <span class="compare-progress-text" data-progress-text>0 / 0 comparisons</span>
-      <span class="help-dot" title="This estimate uses n·log(n). The actual number of comparisons can change with active learning.">?</span>
-    </div>
-  </header>
-
-  <div class="compare-arena" data-compare>
-    <button class="compare-card compare-card-a" type="button" data-choice="A">
-      <div class="compare-card-top">
-        <span class="compare-card-kbd kbd-hint"><span class="compare-card-arrow">→</span> A · press A or ←</span>
-        <span class="compare-card-kbd touch-hint hidden">Tap to select</span>
-        <span class="compare-card-seed" data-choice-seed="A"></span>
-      </div>
-      <div class="compare-card-poster" data-choice-poster="A">
-        <img class="compare-card-cover hidden" data-choice-cover="A" alt="Cover art for the left option" loading="lazy" />
-        <span class="compare-card-poster-label">&lt; poster ·<br /><span data-choice-title-label="A">{left}</span> &gt;</span>
-      </div>
-      <div class="compare-card-foot">
-        <strong class="compare-card-title font-display" data-choice-title="A">{left}</strong>
-        <div class="compare-card-meta" data-choice-meta="A"></div>
-      </div>
-      <div class="compare-card-kbd-badges kbd-hint">
-        <span class="kbd-badge">A</span><span class="kbd-badge">←</span>
-      </div>
-    </button>
-
-    <div class="compare-vs">
-      <div class="vs-orb">
-        <span class="vs-label font-display">vs</span>
-      </div>
-      <button class="tie-button" type="button" data-choice="TIE">
-        <span class="tie-symbol">≈</span>
-        <span class="tie-label">Tie / skip</span>
-        <span class="kbd-badge kbd-hint">␣</span>
-      </button>
-    </div>
-
-    <button class="compare-card compare-card-b" type="button" data-choice="B">
-      <div class="compare-card-top">
-        <span class="compare-card-kbd kbd-hint">B · press B or →</span>
-        <span class="compare-card-kbd touch-hint hidden">Tap to select</span>
-        <span class="compare-card-seed" data-choice-seed="B"></span>
-      </div>
-      <div class="compare-card-poster" data-choice-poster="B">
-        <img class="compare-card-cover hidden" data-choice-cover="B" alt="Cover art for the right option" loading="lazy" />
-        <span class="compare-card-poster-label">&lt; poster ·<br /><span data-choice-title-label="B">{right}</span> &gt;</span>
-      </div>
-      <div class="compare-card-foot">
-        <strong class="compare-card-title font-display" data-choice-title="B">{right}</strong>
-        <div class="compare-card-meta" data-choice-meta="B"></div>
-      </div>
-      <div class="compare-card-kbd-badges kbd-hint">
-        <span class="kbd-badge">B</span><span class="kbd-badge">→</span>
-      </div>
-    </button>
-  </div>
-
-  <div class="compare-progress-row" data-progress>
+<section class="view view-compare hidden" data-view="compare">
+  <div class="progress-strip">
+    <span class="progress-count" data-progress-count>0 of ~0 answered</span>
     <div
       class="progress-track"
       data-progress-track
@@ -76,8 +14,62 @@ const { left = 'Item A', right = 'Item B' } = Astro.props;
     >
       <div class="progress-fill" data-progress-fill></div>
     </div>
-    <p class="compare-progress-meta" data-progress-meta>
-      <span>Estimated total: 0 comparisons</span>
-    </p>
+    <span class="progress-ci" data-progress-ci></span>
+  </div>
+
+  <div class="arena" data-arena>
+    <button class="panel panel-a" type="button" data-choice="A">
+      <div class="panel-key">
+        <span class="panel-key-badge">A</span>
+        <span>or &larr;</span>
+      </div>
+      <!-- Empty alt: the title beside it already names the option, so the
+           poster adds nothing for a screen reader. -->
+      <div class="panel-poster" data-choice-poster="A">
+        <img class="panel-poster-img hidden" data-choice-cover="A" alt="" loading="lazy" />
+        <div class="panel-poster-fallback" data-choice-fallback="A">
+          <span class="panel-poster-label">poster</span>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <div class="panel-title" data-choice-title="A"></div>
+        <div class="panel-meta" data-choice-meta="A"></div>
+      </div>
+    </button>
+
+    <div class="arena-seam"></div>
+
+    <button class="panel panel-b" type="button" data-choice="B">
+      <div class="panel-key">
+        <span class="panel-key-badge">B</span>
+        <span>or &rarr;</span>
+      </div>
+      <div class="panel-poster" data-choice-poster="B">
+        <img class="panel-poster-img hidden" data-choice-cover="B" alt="" loading="lazy" />
+        <div class="panel-poster-fallback" data-choice-fallback="B">
+          <span class="panel-poster-label">poster</span>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <div class="panel-title" data-choice-title="B"></div>
+        <div class="panel-meta" data-choice-meta="B"></div>
+      </div>
+    </button>
+  </div>
+
+  <div class="action-strip">
+    <div class="action-strip-left">
+      <button class="btn-ghost" type="button" data-action="undo">Undo</button>
+      <button class="btn-ghost" type="button" data-choice="TIE">
+        Too close to call &middot; space
+      </button>
+      <button class="btn-ghost" type="button" data-action="redo" disabled>Redo</button>
+    </div>
+    <div class="action-strip-right">
+      <span class="action-hint">
+        You can stop any time &mdash; the intervals tell you what is settled.
+      </span>
+      <button class="btn" type="button" data-action="finish">Stop and see results</button>
+    </div>
   </div>
 </section>

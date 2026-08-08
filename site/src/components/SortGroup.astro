@@ -1,16 +1,14 @@
 ---
 ---
-<section class="card hidden" data-step="sort-group">
-  <div class="pill mb-3">Step 4: Group ranking</div>
-  <h3 class="text-xl font-display">Rank this group of titles</h3>
-  <p class="text-sm text-latte-subtext1">
-    Drag the titles into order. This order gives the model a better signal
-    than one comparison.
-  </p>
-  <p class="mt-2 text-xs text-latte-subtext0">
-    Keyboard: focus a title. Then use the Arrow keys to move between titles.
-    Use Alt+Arrow (or Ctrl+Arrow) to move the title up or down.
-  </p>
+<section class="view view-sort hidden" data-view="sort">
+  <div class="sort-head">
+    <h2>Rank this group</h2>
+    <p class="field-note">
+      Drag the titles into order, best first — one ordering tells the model more
+      than a single comparison. Arrow keys move focus between titles. Alt+Arrow
+      (or Ctrl+Arrow) moves the focused title up or down.
+    </p>
+  </div>
   <ul
     class="sortable-list"
     data-sortable-list
@@ -19,26 +17,26 @@
     aria-orientation="vertical"
   ></ul>
   <p class="visually-hidden" data-sort-group-live aria-live="polite"></p>
-  <p class="mt-3 text-xs text-latte-subtext0" data-group-coverage>
-    Coverage: 0 / 0 titles compared (0 not compared)
-  </p>
-  <p class="text-xs text-latte-subtext0" data-group-estimate>
-    Baseline target: ~0 group sorts (~2 sorts per title).
-  </p>
-  <p class="text-xs text-latte-subtext0">
-    You can stop early. If you do fewer group sorts, the ranking is less
-    accurate. For more stability, run the uncertainty analysis or use
-    pairwise refine.
-  </p>
-  <div class="mt-4 flex flex-wrap gap-3">
+  <div class="sort-stats">
+    <span class="field-note" data-group-coverage>
+      Coverage: 0 / 0 titles compared (0 not compared)
+    </span>
+    <span class="field-note" data-group-estimate>
+      Baseline target: ~0 group sorts (~2 sorts per title).
+    </span>
+    <span class="field-note">
+      You can stop early — fewer sorts means a less certain ranking.
+    </span>
+  </div>
+  <div class="flex flex-wrap gap-2">
     <button class="btn" type="button" data-action="submit-sort">
       Submit ranking
     </button>
-    <button class="btn-secondary" type="button" data-action="skip-sort">
-      Skip this group sort
+    <button class="btn-ghost" type="button" data-action="skip-sort">
+      Skip this group
     </button>
     <button
-      class="btn-secondary hidden"
+      class="btn-ghost hidden"
       type="button"
       data-action="switch-to-pairwise"
     >

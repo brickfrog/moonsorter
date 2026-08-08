@@ -1,163 +1,128 @@
 ---
+import TierList from './TierList.astro';
+
 const { title = 'Results' } = Astro.props;
 ---
-<section class="hidden results-section" data-step="results">
-  <header class="results-header">
-    <div class="pill">Step 5: Results</div>
-    <h3 class="results-headline font-display" data-results-headline>{title}</h3>
-    <p class="results-subhead">
-      Each CI bar shows the width of the 80% bootstrap rank interval. An amber stripe marks an uncertain row. To compare that row next, click it.
-    </p>
-  </header>
+<section class="view view-results hidden" data-view="results">
+  <div class="results-head">
+    <div>
+      <h2 class="results-headline" data-results-headline>{title}</h2>
+      <p class="results-sub">
+        The bar behind each row is the 80% bootstrap interval for that title's rank. Wide bars mean the position is still undecided.
+      </p>
+    </div>
+    <div>
+      <div class="results-exports">
+        <button class="btn-ghost" type="button" data-action="download-csv">.csv</button>
+        <button class="btn-ghost" type="button" data-action="download-results">.json</button>
+        <button class="btn-ghost" type="button" data-action="download-session">.session</button>
+        <button class="btn hidden" type="button" data-action="upload">Upload to AniList</button>
+      </div>
+      <p class="status-slot" role="status" aria-live="polite" data-upload-status></p>
+    </div>
+  </div>
 
-  <div class="results-layout">
+  <div class="results-body">
     <div class="results-main">
       <div class="results-table-actions">
-        <button class="btn-secondary" type="button" data-action="select-all">Select all</button>
-        <button class="btn-secondary" type="button" data-action="select-none">Select none</button>
+        <button class="btn-ghost" type="button" data-action="select-all">Select all</button>
+        <button class="btn-ghost" type="button" data-action="select-none">Select none</button>
         <span class="status-slot" role="status" aria-live="polite" data-selection-status></span>
       </div>
 
-      <div class="rankings overflow-x-auto" data-rankings>
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th class="col-check"><span class="visually-hidden">Select</span></th>
-              <th class="col-rank" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="rank">Rank <span data-sort-indicator="rank"></span></button>
-              </th>
-              <th class="col-title" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="title">Title <span data-sort-indicator="title"></span></button>
-              </th>
-              <th class="col-score" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="originalScore">Original <span data-sort-indicator="originalScore"></span></button>
-              </th>
-              <th class="col-score" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="newScore">New <span data-sort-indicator="newScore"></span></button>
-              </th>
-              <th class="col-ci" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="rankCI">Rank CI · 80% <span data-sort-indicator="rankCI"></span></button>
-              </th>
-              <th class="col-topk" aria-sort="none">
-                <button class="th-sort" type="button" data-sort="topKConfidence">Top-K <span data-sort-indicator="topKConfidence"></span></button>
-              </th>
-            </tr>
-          </thead>
-          <tbody data-rankings-body></tbody>
-        </table>
+      <!-- Not a <table>: the interval bars need one shared rank axis, which
+           only works if every row is the same CSS grid. The ARIA roles put the
+           table semantics back for assistive tech. -->
+      <div role="table" aria-label="Ranking">
+        <div role="rowgroup">
+          <div class="rank-row rank-head" role="row">
+            <span role="columnheader"><span class="visually-hidden">Select</span></span>
+            <span role="columnheader" aria-sort="none">
+              <button class="rank-sort" type="button" data-sort="rank">#<span data-sort-indicator="rank"></span></button>
+            </span>
+            <span role="columnheader" aria-sort="none">
+              <button class="rank-sort" type="button" data-sort="title">Title<span data-sort-indicator="title"></span></button>
+            </span>
+            <span role="columnheader" aria-sort="none">
+              <button class="rank-sort" type="button" data-sort="rankCI">Rank interval · 80%<span data-sort-indicator="rankCI"></span></button>
+            </span>
+            <span class="text-right" role="columnheader" aria-sort="none">
+              <button class="rank-sort" type="button" data-sort="newScore">Score<span data-sort-indicator="newScore"></span></button>
+            </span>
+          </div>
+        </div>
+        <div role="rowgroup" data-rankings-body></div>
       </div>
     </div>
 
-    <aside class="results-sidebar">
-      <div class="sidebar-card" data-analysis-controls>
-        <p class="sidebar-eyebrow">Bootstrap analysis</p>
-        <p class="sidebar-title font-display">Stability check</p>
-        <p class="sidebar-body">Resample comparisons to estimate rank confidence intervals.</p>
-        <div class="analysis-controls-stack">
-          <label>
-            <span class="inline-flex items-center gap-2">Samples <span class="help-dot" title="This value sets the number of bootstrap resamples.">?</span></span>
-            <input id="analysis-samples" type="number" min="50" step="50" value="200" />
-          </label>
-          <label>
-            <span class="inline-flex items-center gap-2">Top-K <span class="help-dot" title="This value sets the rank threshold for lock-in.">?</span></span>
-            <input id="analysis-topk" type="number" min="1" step="1" value="10" />
-          </label>
-          <label>
-            <span class="inline-flex items-center gap-2">Max iterations <span class="help-dot" title="This value sets the number of MM fit iterations for each sample.">?</span></span>
-            <input id="analysis-max-iter" type="number" min="5" step="5" value="40" />
-          </label>
+    <aside class="results-aside">
+      <div class="aside-block">
+        <p class="eyebrow">Stability</p>
+        <div class="stat-row">
+          <span class="stat-label">Median CI width</span>
+          <span class="stat-value" data-stat-median>—</span>
         </div>
-        <button class="btn" type="button" data-action="run-analysis">
-          Calculate confidence intervals
-        </button>
-        <p class="status-slot" role="status" aria-live="polite" data-analysis-status></p>
+        <div class="stat-row">
+          <span class="stat-label">Top-K lock-in</span>
+          <span class="stat-value" data-stat-topk>—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Bootstrap samples</span>
+          <span class="stat-value" data-stat-samples>—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Pairs compared</span>
+          <span class="stat-value" data-stat-pairs>—</span>
+        </div>
+        <details class="advanced">
+          <summary>Bootstrap settings</summary>
+          <div class="advanced-body">
+            <label class="inline-field">
+              <span class="inline-flex items-center gap-2">Samples <span class="help-dot" title="This value sets the number of bootstrap resamples.">?</span></span>
+              <input id="analysis-samples" type="number" min="50" step="50" value="200" />
+            </label>
+            <label class="inline-field">
+              <span class="inline-flex items-center gap-2">Top-K <span class="help-dot" title="This value sets the rank threshold for lock-in.">?</span></span>
+              <input id="analysis-topk" type="number" min="1" step="1" value="10" />
+            </label>
+            <label class="inline-field">
+              <span class="inline-flex items-center gap-2">Max iterations <span class="help-dot" title="This value sets the number of MM fit iterations for each sample.">?</span></span>
+              <input id="analysis-max-iter" type="number" min="5" step="5" value="40" />
+            </label>
+            <button class="btn" type="button" data-action="run-analysis">Calculate confidence intervals</button>
+            <p class="status-slot" role="status" aria-live="polite" data-analysis-status></p>
+          </div>
+        </details>
       </div>
 
-      <div class="sidebar-card hidden" data-analysis-summary>
-        <p class="sidebar-eyebrow" data-analysis-eyebrow>Bootstrap · — resamples</p>
-        <p class="sidebar-title font-display">Ranking stability</p>
-        <p class="sidebar-body">These statistics show the median rank change under resampling.</p>
-        <dl class="stability-stats">
-          <div>
-            <dt>Median CI width</dt>
-            <dd data-analysis-median>—</dd>
-          </div>
-          <div>
-            <dt>Top-K lock-in</dt>
-            <dd data-analysis-topk>—</dd>
-          </div>
-          <div>
-            <dt>MM iterations</dt>
-            <dd data-stat-iters>—</dd>
-          </div>
-          <div>
-            <dt>Pairs compared</dt>
-            <dd data-stat-pairs>—</dd>
-          </div>
-        </dl>
-        <div class="sidebar-callout">
-          <span class="sidebar-callout-tag">Recommendation</span>
-          <p data-analysis-recommendation>—</p>
-        </div>
+      <div class="callout hidden" data-uncertain-callout>
+        <p class="eyebrow">Still undecided</p>
+        <p class="callout-body" data-uncertain-body></p>
+        <div class="uncertain-chips" data-uncertain-chips></div>
+        <button class="btn-ghost" type="button" data-action="resume-comparisons">Compare those pairs</button>
       </div>
 
-      <div class="sidebar-card hidden" data-uncertain-card>
-        <p class="sidebar-eyebrow">Uncertain titles</p>
-        <p class="sidebar-title font-display">Click to compare</p>
-        <div class="analysis-uncertain-list" data-analysis-uncertain-list></div>
-        <button class="btn-secondary" type="button" data-action="resume-comparisons">
-          Continue the comparisons for uncertain pairs
-        </button>
+      <div class="aside-block" data-tier-block>
+        <p class="eyebrow">Tiers</p>
+        <div data-tier-lines></div>
+        <details class="advanced">
+          <summary>Tier export</summary>
+          <div class="advanced-body">
+            <label class="inline-field">
+              <span class="inline-flex items-center gap-2">Number of tiers <span class="help-dot" title="This value sets the number of tiers (3-7).">?</span></span>
+              <input id="tier-k-value" type="number" min="3" max="7" step="1" value="5" />
+            </label>
+            <button class="btn-ghost" type="button" data-action="download-tierlist" title="Moonsorter captures the tier list at the current viewport width.">Download tier image</button>
+            <p class="status-slot" role="status" aria-live="polite" data-tierlist-status></p>
+          </div>
+        </details>
       </div>
 
-      <div class="sidebar-card">
-        <p class="sidebar-eyebrow">Export</p>
-        <button class="btn hidden" type="button" data-action="upload">
-          Upload scores to AniList →
-        </button>
-        <div class="export-rows">
-          <button class="export-row" type="button" data-action="download-results">
-            <span class="export-label">Rankings</span>
-            <span class="export-ext">.json</span>
-          </button>
-          <button class="export-row" type="button" data-action="download-csv">
-            <span class="export-label">Spreadsheet</span>
-            <span class="export-ext">.csv</span>
-          </button>
-          <button class="export-row" type="button" data-action="download-session">
-            <span class="export-label">Session state</span>
-            <span class="export-ext">.session</span>
-          </button>
-        </div>
-        <button class="btn-secondary" type="button" data-action="restart">
-          Start again
-        </button>
+      <div>
+        <button class="btn-ghost" type="button" data-action="restart">Start again</button>
       </div>
     </aside>
   </div>
+
+  <TierList />
 </section>
-
-<style is:global>
-  /* The sortable headers are buttons so they are keyboard-reachable. These
-     rules strip the UA button chrome so the header row looks unchanged; the
-     inherited values come from `.results-table th` in global.css. */
-  .th-sort {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 4px;
-    background: none;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    color: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-    cursor: pointer;
-  }
-
-  .th-sort:focus-visible {
-    outline: 2px solid var(--signal);
-    outline-offset: 2px;
-  }
-</style>

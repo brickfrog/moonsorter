@@ -6,6 +6,9 @@ import { withBase } from '../lib/utils';
 const {
   title = 'Moonsorter',
   description = 'Moonsorter ranks your AniList list with pairwise comparisons. It uses MoonBit and WebAssembly.',
+  // Pages that never load `rank.ts` have nothing for these buttons to switch
+  // between, and an inert control reads as a broken one.
+  views = true,
 } = Astro.props;
 
 // One normalised source of truth. Pages used to thread a raw `data-base-url`
@@ -50,32 +53,37 @@ const baseUrl = withBase();
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
-    <link rel="icon" type="image/png" href={withBase('favicon.png')} />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    <link rel="alternate icon" type="image/png" href={withBase('favicon.png')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Gloock&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
   </head>
   <body data-base-url={baseUrl}>
-    <div class="site-container">
-      <header class="flex flex-col gap-6 pb-8 pt-8 md:flex-row md:items-center md:justify-between">
-        <a href={baseUrl} class="flex items-center gap-4">
-          <div class="moon-mark" aria-hidden="true"></div>
-          <h1 class="font-display text-4xl md:text-5xl">Moonsorter</h1>
+    <div class="app-shell">
+      {/*
+        The top bar replaces the five-step stepper. Which view is open implies
+        where you are in the flow, so the buttons carry `aria-current="page"`
+        rather than inventing tab semantics for panels that are not tabpanels.
+      */}
+      <header class="topbar">
+        <a href={baseUrl} class="topbar-brand">
+          <span class="topbar-mark" aria-hidden="true"></span>
+          <span class="topbar-name">Moonsorter</span>
+          <span class="topbar-session" data-session-label></span>
         </a>
-        <nav class="flex flex-wrap items-center gap-2">
-          <a class="nav-link" href="https://github.com/brickfrog/moonsorter" rel="noopener">GitHub</a>
-        </nav>
+        {views && (
+          <nav class="topbar-nav" aria-label="Views">
+            <button class="nav-link" type="button" data-view-target="list">List</button>
+            <button class="nav-link" type="button" data-view-target="compare">Compare</button>
+            <button class="nav-link" type="button" data-view-target="results">Results</button>
+          </nav>
+        )}
       </header>
-      <main class="flex flex-col gap-16">
-        <slot />
-      </main>
-      <footer class="site-footer">
-        <span>Built with MoonBit + WASM.</span>
-        <a href="https://github.com/brickfrog/moonsorter" rel="noopener">source</a>
-      </footer>
+      <slot />
     </div>
   </body>
 </html>

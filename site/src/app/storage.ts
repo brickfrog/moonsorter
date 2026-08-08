@@ -1,6 +1,5 @@
 import type { SavedState } from '../lib/types';
 import { state, STATE_KEY } from './state';
-import { dom } from './dom';
 
 /** Bump when the persisted shape changes incompatibly. */
 export const SESSION_VERSION = 1;
@@ -29,7 +28,6 @@ export function buildSavedState(): SavedState {
     rankPhase: state.rankPhase,
     rankObjective: state.rankObjective,
     modeChosen: state.modeChosen,
-    optInTierList: dom.optInTierList?.checked ?? true,
   };
 }
 
@@ -60,7 +58,6 @@ export function normalizeSavedState(parsed: SavedState): SavedState {
     rankPhase: parsed.rankPhase === 'group' ? 'group' : 'pairwise',
     rankObjective: parsed.rankObjective === 'top-k' ? 'top-k' : 'full',
     modeChosen: parsed.modeChosen ?? false,
-    optInTierList: parsed.optInTierList ?? true,
   };
 }
 

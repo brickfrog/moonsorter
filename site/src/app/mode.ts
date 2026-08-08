@@ -1,12 +1,13 @@
+import { getToken } from '../lib/auth';
 import { setStatus } from '../lib/utils';
 import { dom } from './dom';
 import { state } from './state';
 import { saveState } from './storage';
-import { showStep } from './steps';
+import { showView } from './views';
 import { updatePairPolicy } from './wasm';
 import { updateModeUI, startGroupSort } from './group';
 import { renderPair } from './comparison';
-import type { RankGoal, RankMode, StartOptions } from '../lib/types';
+import type { RankMode, StartOptions } from '../lib/types';
 
 // Forward declaration for startRanking
 let startRankingCallback: ((options: StartOptions) => Promise<void>) | null = null;
@@ -15,21 +16,27 @@ export function setStartRankingCallback(fn: (options: StartOptions) => Promise<v
   startRankingCallback = fn;
 }
 
+/**
+ * "Import from AniList" and "Disconnect" are meaningless without a token, and
+ * "Connect AniList" is noise once you have one. Runs after the import-path
+ * pass because both rules drive the same `hidden` class and auth wins.
+ */
+export function updateAuthUi() {
+  const connected = Boolean(getToken());
+  dom.authGated.forEach((el) => {
+    const requirement = el.getAttribute('data-requires');
+    el.classList.toggle(
+      'hidden',
+      requirement === 'connected' ? !connected : connected,
+    );
+  });
+}
+
 export function setImportPath(path: 'anilist' | 'csv') {
   state.importPath = path;
-  if (dom.importTitle) {
-    dom.importTitle.textContent = path === 'csv' ? 'Import your CSV file' : 'Import your list';
-  }
-  if (dom.importDesc) {
-    dom.importDesc.textContent =
-      path === 'csv'
-        ? 'Select a CSV file with title and score columns.'
-        : 'Import your AniList titles. Then select how many titles to rank now.';
-  }
-  dom.importPathElements.forEach((el) => {
-    const elPath = el.getAttribute('data-import-path');
-    el.style.display = elPath === path ? '' : 'none';
-  });
+  dom.anilistOnly.forEach((el) => el.classList.toggle('hidden', path !== 'anilist'));
+  dom.csvOnly.forEach((el) => el.classList.toggle('hidden', path !== 'csv'));
+  updateAuthUi();
 }
 
 export function enterActiveStep() {
@@ -37,7 +44,7 @@ export function enterActiveStep() {
   if (state.rankMode === 'pairwise' || state.rankPhase === 'pairwise') {
     state.rankPhase = 'pairwise';
     updateModeUI();
-    showStep('compare');
+    showView('compare');
     renderPair();
     return;
   }
@@ -45,23 +52,21 @@ export function enterActiveStep() {
   startGroupSort();
 }
 
-export async function applyModeSelection(goal: RankGoal, mode: RankMode) {
-  state.rankGoal = goal;
+export async function applyModeSelection(mode: RankMode) {
+  // The method radios carry interaction style only. "Use existing scores as
+  // priors" is the whole rescore-vs-scratch decision now, so read the goal
+  // back off the checkbox instead of pairing a goal with every method.
+  const useScorePrior = dom.useScorePrior?.checked ?? true;
+  state.useScorePrior = useScorePrior;
+  state.rankGoal = useScorePrior ? 'rescore' : 'scratch';
   state.rankMode = mode;
   state.rankObjective =
-    goal === 'scratch'
+    state.rankGoal === 'scratch'
       ? dom.scratchGoal?.value === 'top-k'
         ? 'top-k'
         : 'full'
       : 'full';
   state.modeChosen = true;
-  if (goal === 'scratch') {
-    state.useScorePrior = false;
-    if (dom.useScorePrior) dom.useScorePrior.checked = false;
-  } else {
-    state.useScorePrior = true;
-    if (dom.useScorePrior) dom.useScorePrior.checked = true;
-  }
 
   const startOptions = state.pendingStart;
   if (startOptions && startRankingCallback) {
@@ -78,7 +83,7 @@ export async function applyModeSelection(goal: RankGoal, mode: RankMode) {
       });
     } catch (error) {
       setStatus(
-        dom.importStatus,
+        dom.listStatus,
         error instanceof Error ? error.message : 'Moonsorter did not start the ranking. Try again.',
       );
     }

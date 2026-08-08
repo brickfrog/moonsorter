@@ -18,7 +18,7 @@ function parseIntInput(
 
 export function runAnalysis() {
   if (!state.wasm) {
-    setStatus(dom.importStatus, 'Load the ranker first.');
+    setStatus(dom.analysisStatus, 'Load the ranker first.');
     return;
   }
   state.analysisSamples = parseIntInput(dom.analysisSamples?.value, state.analysisSamples, 10);

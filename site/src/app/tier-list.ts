@@ -3,30 +3,22 @@ import { dom } from './dom';
 import { state } from './state';
 import type { ResultsPayload, ResultRow } from '../lib/types';
 
+const TIER_LABELS = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+
 export function renderTierList(payload: ResultsPayload) {
-  if (!state.wasm || !dom.tierList || !dom.tierContainer || !dom.tierTemplate) return;
-
-  const showTierList = dom.optInTierList?.checked ?? true;
-  if (!showTierList) {
-    dom.tierList.classList.add('hidden');
-    return;
-  }
-
-  dom.tierList.classList.remove('hidden');
-  dom.tierContainer.innerHTML = '';
+  // Only the export grid needs the template; the sidebar rows must still
+  // render if the off-screen block is absent.
+  if (!state.wasm) return;
 
   // An empty number input parses to NaN, and NaN survives Math.max/Math.min,
   // so clamp only after establishing a real number.
   const parsedK = dom.tierKValue ? parseInt(dom.tierKValue.value, 10) : 5;
   const k = Math.max(3, Math.min(7, Number.isFinite(parsedK) ? parsedK : 5));
 
-  // Generate tier labels dynamically
-  const allLabels = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
-  const tierLabels = allLabels.slice(0, k);
+  const tierLabels = TIER_LABELS.slice(0, k);
   state.wasm.compute_tiers(k);
 
   const tierGroups = Array.from({ length: k }, () => [] as ResultRow[]);
-
 
   payload.rows.forEach(row => {
     const tierIdx = state.wasm!.get_tier_for(row.index);
@@ -37,76 +29,95 @@ export function renderTierList(payload: ResultsPayload) {
     }
   });
 
+  if (dom.tierLines) dom.tierLines.innerHTML = '';
+  if (dom.tierExport) dom.tierExport.innerHTML = '';
+
+  const populated = tierGroups.some(group => group.length > 0);
+  dom.tierBlock?.classList.toggle('hidden', !populated);
+  if (!populated) return;
+
+  // One pass feeds both surfaces: the sidebar text rows people read, and the
+  // off-screen grid that `downloadTierListImage` rasterises.
   tierGroups.forEach((group, i) => {
     if (group.length === 0) return;
-    const clone = dom.tierTemplate!.content.cloneNode(true) as DocumentFragment;
-    const rowEl = clone.querySelector('.tier-row')!;
-    const labelEl = clone.querySelector('.tier-label')!;
-    const itemsEl = clone.querySelector('.tier-items')!;
-
-    rowEl.setAttribute('data-tier', String(i));
-    labelEl.textContent = tierLabels[i] || '?';
-
-    group.forEach(item => {
-      const itemEl = document.createElement('div');
-      itemEl.className = 'tier-item';
-      itemEl.title = item.title;
-
-      const img = document.createElement('img');
-      img.alt = item.title;
-      // Both of these exist for the PNG export and must be set before `src`.
-      // `crossOrigin` makes the very first fetch a CORS request so the canvas
-      // is never tainted. Setting it later cannot work: the browser reuses the
-      // cached non-CORS response for the re-request and the load simply fails,
-      // which is how every cover silently vanished from the exported image.
-      // `loading="lazy"` would leave off-screen tiers blank in the capture.
-      img.crossOrigin = 'anonymous';
-
-      if (item.coverImage) {
-        img.src = item.coverImage;
-        img.onerror = () => {
-          // Fallback to text-only card
-          itemEl.classList.add('no-image');
-          img.style.display = 'none';
-          const fallback = document.createElement('div');
-          fallback.className = 'tier-item-text';
-          fallback.textContent = item.title;
-          itemEl.insertBefore(fallback, itemEl.firstChild);
-        };
-      } else {
-        // No image available, show text
-        itemEl.classList.add('no-image');
-        img.style.display = 'none';
-        const fallback = document.createElement('div');
-        fallback.className = 'tier-item-text';
-        fallback.textContent = item.title;
-        itemEl.insertBefore(fallback, itemEl.firstChild);
-      }
-
-      const tooltip = document.createElement('div');
-      tooltip.className = 'item-tooltip';
-      tooltip.textContent = item.title;
-
-      itemEl.appendChild(img);
-      itemEl.appendChild(tooltip);
-
-      itemEl.onclick = () => {
-        state.focusPair = null;
-        const tableRow = document.querySelector(`tr[data-index="${item.index}"]`);
-        tableRow?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        tableRow?.classList.add('highlight-flash');
-        setTimeout(() => tableRow?.classList.remove('highlight-flash'), 2000);
-      };
-
-      itemsEl.appendChild(itemEl);
-    });
-
-    dom.tierContainer!.appendChild(clone);
+    const label = tierLabels[i] || '?';
+    appendTierLine(label, group);
+    appendExportRow(i, label, group);
   });
 }
 
+function appendTierLine(label: string, group: ResultRow[]) {
+  if (!dom.tierLines) return;
+
+  const line = document.createElement('div');
+  line.className = 'tier-line';
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'tier-line-label';
+  labelEl.textContent = label;
+
+  const namesEl = document.createElement('span');
+  namesEl.className = 'tier-line-names';
+  // Titles arrive from arbitrary CSV, so they are written as text, not markup.
+  namesEl.textContent = group.map(row => row.title).join(', ');
+
+  line.appendChild(labelEl);
+  line.appendChild(namesEl);
+  dom.tierLines.appendChild(line);
+}
+
+function appendExportRow(tierIndex: number, label: string, group: ResultRow[]) {
+  if (!dom.tierExport || !dom.tierTemplate) return;
+
+  const clone = dom.tierTemplate.content.cloneNode(true) as DocumentFragment;
+  const rowEl = clone.querySelector('.tier-row')!;
+  const labelEl = clone.querySelector('.tier-label')!;
+  const itemsEl = clone.querySelector('.tier-items')!;
+
+  rowEl.setAttribute('data-tier', String(tierIndex));
+  labelEl.textContent = label;
+
+  group.forEach(item => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'tier-item';
+
+    const img = document.createElement('img');
+    img.alt = item.title;
+    // Both of these exist for the PNG export and must be set before `src`.
+    // `crossOrigin` makes the very first fetch a CORS request so the canvas
+    // is never tainted. Setting it later cannot work: the browser reuses the
+    // cached non-CORS response for the re-request and the load simply fails,
+    // which is how every cover silently vanished from the exported image.
+    // `loading="lazy"` would leave off-screen tiers blank in the capture.
+    img.crossOrigin = 'anonymous';
+
+    const useTextFallback = () => {
+      itemEl.classList.add('no-image');
+      img.style.display = 'none';
+      const fallback = document.createElement('div');
+      fallback.className = 'tier-item-text';
+      fallback.textContent = item.title;
+      itemEl.insertBefore(fallback, itemEl.firstChild);
+    };
+
+    // The 56×80 cell wants the `medium` thumbnail; `coverArt` is the
+    // extraLarge Compare poster and would download megabytes per tier.
+    if (item.coverImage) {
+      img.src = item.coverImage;
+      img.onerror = useTextFallback;
+    } else {
+      useTextFallback();
+    }
+
+    itemEl.appendChild(img);
+    itemsEl.appendChild(itemEl);
+  });
+
+  dom.tierExport.appendChild(clone);
+}
+
 export async function downloadTierListImage() {
-  const container = dom.tierContainer as HTMLElement;
+  const container = dom.tierExport as HTMLElement;
   if (!container) return;
 
   const downloadButton = document.querySelector('[data-action="download-tierlist"]');
@@ -143,7 +154,7 @@ export async function downloadTierListImage() {
     const canvas = await h2c(container, {
       useCORS: true,
       allowTaint: false,
-      backgroundColor: '#111',
+      backgroundColor: '#F3F3EC',
       scale: 2,
       logging: false,
     });

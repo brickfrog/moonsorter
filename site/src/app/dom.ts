@@ -1,136 +1,124 @@
-export type Steps = {
-  connect: HTMLElement | null;
-  import: HTMLElement | null;
-  mode: HTMLElement | null;
-  compare: HTMLElement | null;
-  compareActions: HTMLElement | null;
-  results: HTMLElement | null;
-  sortGroup: HTMLElement | null;
-};
+export type ViewKey = 'list' | 'compare' | 'sort' | 'results';
 
-export type StepKey = 'connect' | 'import' | 'mode' | 'compare' | 'results';
+/** What the top-bar buttons address. `sort` is reached through `compare`. */
+export type NavTarget = 'list' | 'compare' | 'results';
+
+export type Views = Record<ViewKey, HTMLElement | null>;
 
 function query<T extends HTMLElement = HTMLElement>(selector: string): T | null {
   return document.querySelector(selector) as T | null;
 }
 
-function queryAll(selector: string): HTMLElement[] {
-  return Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+function queryAll<T extends HTMLElement = HTMLElement>(selector: string): T[] {
+  return Array.from(document.querySelectorAll(selector)) as T[];
+}
+
+function byId<T extends HTMLElement = HTMLElement>(id: string): T | null {
+  return document.getElementById(id) as T | null;
 }
 
 export const dom = {
-  // Step containers
-  steps: {
-    connect: query('[data-step="connect"]'),
-    import: query('[data-step="import"]'),
-    mode: query('[data-step="mode"]'),
-    compare: query('[data-step="compare"]'),
-    compareActions: query('[data-step="compare-actions"]'),
-    results: query('[data-step="results"]'),
-    sortGroup: query('[data-step="sort-group"]'),
-  } as Steps,
+  // Shell
+  views: {
+    list: query('[data-view="list"]'),
+    compare: query('[data-view="compare"]'),
+    sort: query('[data-view="sort"]'),
+    results: query('[data-view="results"]'),
+  } as Views,
+  navButtons: queryAll<HTMLButtonElement>('[data-view-target]'),
+  sessionLabel: query('[data-session-label]'),
+  loading: query('[data-loading]'),
 
-  // Stepper navigation
-  stepperButtons: queryAll('[data-step-target]') as HTMLButtonElement[],
-  stepperStatus: query('[data-stepper-status]'),
-  rankLoading: query('[data-rank-loading]'),
+  // List view
+  listStatus: query('[data-list-status]'),
+  listHeadline: query('[data-list-headline]'),
+  listBody: query('[data-list-body]'),
+  listCount: query('[data-list-count]'),
+  methodRadios: queryAll<HTMLInputElement>('[data-rank-mode]'),
+  anilistOnly: queryAll('[data-anilist-only]'),
+  csvOnly: queryAll('[data-csv-only]'),
+  authGated: queryAll('[data-requires]'),
+  startButton: query<HTMLButtonElement>('[data-action="start"]'),
+  logoutButton: query<HTMLButtonElement>('[data-action="logout"]'),
+  sessionFile: query<HTMLInputElement>('[data-session-file]'),
 
-  // Status displays
-  connectStatus: query('[data-connect-status]'),
-  importStatus: query('[data-import-status]'),
-  sessionStatus: query('[data-session-status]'),
-
-  // Progress elements
-  progressText: query('[data-progress-text]'),
-  progressFill: query<HTMLDivElement>('[data-progress-fill]'),
-  progressMeta: query('[data-progress-meta]'),
-  groupCoverage: query('[data-group-coverage]'),
-  groupEstimate: query('[data-group-estimate]'),
-
-  // Comparison UI
+  // Compare view
+  arena: query('[data-arena]'),
+  choiceButtons: queryAll('[data-choice]'),
   leftTitle: query('[data-choice-title="A"]'),
   rightTitle: query('[data-choice-title="B"]'),
-  choiceButtons: queryAll('[data-choice]'),
-  pairStrategyBadge: query('[data-pair-strategy]'),
+  progressCount: query('[data-progress-count]'),
+  progressTrack: query('[data-progress-track]'),
+  progressFill: query<HTMLDivElement>('[data-progress-fill]'),
+  progressCI: query('[data-progress-ci]'),
+  redoButton: query<HTMLButtonElement>('[data-action="redo"]'),
 
-  // Results UI
+  // Sort view
+  sortableList: query('[data-sortable-list]'),
+  sortLive: query('[data-sort-group-live]'),
+  groupCoverage: query('[data-group-coverage]'),
+  groupEstimate: query('[data-group-estimate]'),
+  switchToPairwise: query('[data-action="switch-to-pairwise"]'),
+
+  // Results view
+  resultsHeadline: query('[data-results-headline]'),
   rankingsBody: query('[data-rankings-body]'),
   selectionStatus: query('[data-selection-status]'),
+  uploadButton: query<HTMLButtonElement>('[data-action="upload"]'),
+  uploadStatus: query('[data-upload-status]'),
 
-  // Analysis UI
-  analysisSummary: query('[data-analysis-summary]'),
-  analysisControlsCard: query('[data-analysis-controls]'),
-  uncertainCard: query('[data-uncertain-card]'),
-  analysisEyebrow: query('[data-analysis-eyebrow]'),
-  analysisMedian: query('[data-analysis-median]'),
-  analysisTopKSummary: query('[data-analysis-topk]'),
-  analysisRecommendation: query('[data-analysis-recommendation]'),
-  analysisUncertainList: query<HTMLDivElement>('[data-analysis-uncertain-list]'),
-  analysisResumeButton: query<HTMLButtonElement>('[data-action="resume-comparisons"]'),
-  analysisStatus: query('[data-analysis-status]'),
-  statIters: query('[data-stat-iters]'),
+  // Results sidebar — stability
+  statMedian: query('[data-stat-median]'),
+  statTopK: query('[data-stat-topk]'),
+  statSamples: query('[data-stat-samples]'),
   statPairs: query('[data-stat-pairs]'),
-  resultsHeadline: query('[data-results-headline]'),
+  analysisStatus: query('[data-analysis-status]'),
+  runAnalysisButton: query<HTMLButtonElement>('[data-action="run-analysis"]'),
 
-  // Tier list
-  tierList: query('[data-tier-list]'),
-  tierContainer: query('.tier-container'),
+  // Results sidebar — undecided callout
+  uncertainCallout: query('[data-uncertain-callout]'),
+  uncertainBody: query('[data-uncertain-body]'),
+  uncertainChips: query<HTMLDivElement>('[data-uncertain-chips]'),
+  resumeButton: query<HTMLButtonElement>('[data-action="resume-comparisons"]'),
+
+  // Results sidebar — tiers
+  tierBlock: query('[data-tier-block]'),
+  tierLines: query('[data-tier-lines]'),
+  tierExport: query('[data-tier-export]'),
   tierStatus: query('[data-tierlist-status]'),
-  tierTemplate: document.getElementById('tier-row-template') as HTMLTemplateElement | null,
+  tierTemplate: byId<HTMLTemplateElement>('tier-row-template'),
 
-  // Form inputs
-  mediaType: document.getElementById('media-type') as HTMLSelectElement | null,
-  importMode: document.getElementById('import-mode') as HTMLSelectElement | null,
-  importCount: document.getElementById('import-count') as HTMLInputElement | null,
-  csvFile: document.getElementById('csv-file') as HTMLInputElement | null,
-  includeUnscored: document.getElementById('include-unscored') as HTMLInputElement | null,
-  useScorePrior: document.getElementById('use-score-prior') as HTMLInputElement | null,
-  preserveRange: document.getElementById('preserve-range') as HTMLInputElement | null,
-  scoreFormat: document.getElementById('score-format') as HTMLSelectElement | null,
-  exploration: document.getElementById('exploration-epsilon') as HTMLInputElement | null,
-  uncertaintyPrior: document.getElementById('uncertainty-prior') as HTMLInputElement | null,
+  // Import form inputs
+  mediaType: byId<HTMLSelectElement>('media-type'),
+  importMode: byId<HTMLSelectElement>('import-mode'),
+  importCount: byId<HTMLInputElement>('import-count'),
+  csvFile: byId<HTMLInputElement>('csv-file'),
+  includeUnscored: byId<HTMLInputElement>('include-unscored'),
+  useScorePrior: byId<HTMLInputElement>('use-score-prior'),
+  preserveRange: byId<HTMLInputElement>('preserve-range'),
+  scoreFormat: byId<HTMLSelectElement>('score-format'),
+  exploration: byId<HTMLInputElement>('exploration-epsilon'),
+  uncertaintyPrior: byId<HTMLInputElement>('uncertainty-prior'),
+  scratchGoal: byId<HTMLSelectElement>('scratch-goal'),
 
   // Date filters
-  airedFrom: document.getElementById('filter-aired-from') as HTMLInputElement | null,
-  airedTo: document.getElementById('filter-aired-to') as HTMLInputElement | null,
-  startedFrom: document.getElementById('filter-started-from') as HTMLInputElement | null,
-  startedTo: document.getElementById('filter-started-to') as HTMLInputElement | null,
-  completedFrom: document.getElementById('filter-completed-from') as HTMLInputElement | null,
-  completedTo: document.getElementById('filter-completed-to') as HTMLInputElement | null,
-  updatedFrom: document.getElementById('filter-updated-from') as HTMLInputElement | null,
-  updatedTo: document.getElementById('filter-updated-to') as HTMLInputElement | null,
-
-  // Mode options
-  scratchGoal: document.getElementById('scratch-goal') as HTMLSelectElement | null,
-  optInTierList: document.getElementById('opt-in-tier-list') as HTMLInputElement | null,
+  airedFrom: byId<HTMLInputElement>('filter-aired-from'),
+  airedTo: byId<HTMLInputElement>('filter-aired-to'),
+  startedFrom: byId<HTMLInputElement>('filter-started-from'),
+  startedTo: byId<HTMLInputElement>('filter-started-to'),
+  completedFrom: byId<HTMLInputElement>('filter-completed-from'),
+  completedTo: byId<HTMLInputElement>('filter-completed-to'),
+  updatedFrom: byId<HTMLInputElement>('filter-updated-from'),
+  updatedTo: byId<HTMLInputElement>('filter-updated-to'),
 
   // Analysis inputs
-  analysisSamples: document.getElementById('analysis-samples') as HTMLInputElement | null,
-  analysisTopK: document.getElementById('analysis-topk') as HTMLInputElement | null,
-  analysisMaxIter: document.getElementById('analysis-max-iter') as HTMLInputElement | null,
-
-  // Tier list input
-  tierKValue: document.getElementById('tier-k-value') as HTMLInputElement | null,
+  analysisSamples: byId<HTMLInputElement>('analysis-samples'),
+  analysisTopK: byId<HTMLInputElement>('analysis-topk'),
+  analysisMaxIter: byId<HTMLInputElement>('analysis-max-iter'),
+  tierKValue: byId<HTMLInputElement>('tier-k-value'),
 
   // Modals
   earlyFinishModal: query('[data-early-finish-modal]'),
   earlyFinishMessage: query('[data-early-finish-message]'),
   startOverModal: query('[data-start-over-modal]'),
-
-  // Mode-specific
-  switchToPairwise: query('[data-action="switch-to-pairwise"]'),
-
-  // Import path toggle
-  importTitle: query('[data-import-title]'),
-  importDesc: query('[data-import-desc]'),
-  importPathElements: queryAll('[data-import-path]'),
-
-  // Sortable list container
-  sortableList: query('[data-sortable-list]'),
-
-  // Upload button
-  uploadButton: query<HTMLButtonElement>('[data-action="upload"]'),
-
-  // Session import
-  sessionFile: query<HTMLInputElement>('[data-session-file]'),
 };

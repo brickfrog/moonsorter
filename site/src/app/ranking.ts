@@ -4,9 +4,10 @@ import type { Entry, RankingHistoryEntry, StartOptions, ScoreConfig } from '../l
 import { dom } from './dom';
 import { state } from './state';
 import { saveState } from './storage';
-import { showStep } from './steps';
+import { showView } from './views';
 import { updateProgress } from './progress';
 import { ensureWasm, applyPriorRanking, applyHistoryEntry, resolvePairPolicy } from './wasm';
+import { updateListView } from './list';
 import { enterActiveStep } from './mode';
 
 function applyAnalysisDefaults(total: number) {
@@ -67,11 +68,15 @@ export async function startRanking(options: StartOptions) {
       completedAtYear: entry.completedAtYear,
       updatedAtYear: entry.updatedAtYear,
       coverImage: entry.coverImage,
+      coverArt: entry.coverArt,
+      format: entry.format,
+      episodes: entry.episodes,
+      chapters: entry.chapters,
     }))
     .filter((entry) => entry.title.length > 0);
 
   if (cleaned.length < 2) {
-    setStatus(dom.importStatus, 'Moonsorter needs at least two valid titles to make a ranking.');
+    setStatus(dom.listStatus, 'Moonsorter needs at least two valid titles to make a ranking.');
     return;
   }
 
@@ -111,27 +116,6 @@ export async function startRanking(options: StartOptions) {
     dom.analysisStatus.textContent = '';
   }
 
-  // Disable tier list by default if no cover images (CSV imports)
-  const hasCoverImages = state.items.some(item => item.coverImage);
-  if (dom.optInTierList) {
-    if (!hasCoverImages) {
-      dom.optInTierList.checked = false;
-      dom.optInTierList.disabled = true;
-      const label = dom.optInTierList.parentElement;
-      if (label) {
-        label.title = 'The tier list requires cover images. Only AniList imports have cover images.';
-        label.style.opacity = '0.5';
-      }
-    } else {
-      dom.optInTierList.disabled = false;
-      dom.optInTierList.checked = true;
-      const label = dom.optInTierList.parentElement;
-      if (label) {
-        label.title = '';
-        label.style.opacity = '1';
-      }
-    }
-  }
 
   const config = getScoreConfig(state.scoreFormat);
   if (state.useScorePrior && state.priorComparisons.length === 0) {
@@ -152,7 +136,7 @@ export async function startRanking(options: StartOptions) {
     const ok = wasmApi.create_ranker(state.items.length);
     if (!ok) {
       console.error('[rank] create_ranker returned false');
-      setStatus(dom.importStatus, 'Moonsorter did not create the ranker. Reload the page and try again.');
+      setStatus(dom.listStatus, 'Moonsorter did not create the ranker. Reload the page and try again.');
       return;
     }
     wasmApi.set_uncertainty_prior(state.uncertaintyPrior);
@@ -160,7 +144,7 @@ export async function startRanking(options: StartOptions) {
   } catch (error) {
     console.error('[rank] create_ranker threw', error);
     setStatus(
-      dom.importStatus,
+      dom.listStatus,
       error instanceof Error
         ? `The ranker did not start: ${error.message}`
         : 'The ranker did not start. Reload the page and try again.',
@@ -190,9 +174,13 @@ export async function startRanking(options: StartOptions) {
 
   saveState();
   updateProgress();
+  updateListView();
+  // A session restored from storage or a .session file already carries its
+  // method, so it goes straight to the comparison surface. Everything else
+  // waits on the List view until the reader presses "Start comparing".
   if (state.modeChosen) {
     enterActiveStep();
   } else {
-    showStep('mode');
+    showView('list');
   }
 }

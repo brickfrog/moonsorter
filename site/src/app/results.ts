@@ -9,7 +9,7 @@ import {
 } from '../lib/scores';
 import { dom } from './dom';
 import { state } from './state';
-import { showStep } from './steps';
+import { showView } from './views';
 import { saveState } from './storage';
 import { renderPair } from './comparison';
 
@@ -136,7 +136,7 @@ function focusComparisonFor(row: ResultRow, rows: ResultRow[]) {
   state.rankPhase = 'pairwise';
   saveState();
   state.focusPair = [row.index, neighbor.index];
-  showStep('compare');
+  showView('compare');
   renderPair();
 }
 
@@ -159,13 +159,15 @@ export function renderResultsTable(payload: ResultsPayload) {
   const analysisReady = Boolean(payload.analysis && state.wasm);
   const widthTarget =
     analysisReady && state.wasm ? state.wasm.get_uncertainty_width_target() : null;
+  // Every interval is drawn against ranks 1..n, not against its own row, so
+  // the bars share one axis and overlaps are legible down the column.
+  const total = payload.rows.length;
 
   // Sort rows if a column is selected. payload.rows arrives in rank order, and
   // Array.prototype.sort is stable, so equal keys keep rank as the tie-break.
   const sortKeys: Record<string, (row: ResultRow) => number | string> = {
     rank: (row) => row.rank,
     title: (row) => row.title.toLowerCase(),
-    originalScore: (row) => row.originalScore,
     newScore: (row) => row.newScore,
     // The cell renders a bar proportional to interval WIDTH, so order by
     // width. Ordering by the lower bound just reproduces rank order and reads
@@ -174,7 +176,6 @@ export function renderResultsTable(payload: ResultsPayload) {
       row.rankLow != null && row.rankHigh != null
         ? row.rankHigh - row.rankLow
         : -1,
-    topKConfidence: (row) => row.topKConfidence ?? -1,
   };
   const sortedRows = [...payload.rows];
   const sortKey = state.sortColumn ? sortKeys[state.sortColumn] : undefined;
@@ -190,17 +191,18 @@ export function renderResultsTable(payload: ResultsPayload) {
   }
 
   // Update sort indicators. The arrow glyph lives in the button's indicator
-  // span; aria-sort belongs on the owning th, which is what AT announces.
+  // span; aria-sort belongs on the owning columnheader, which is what AT
+  // announces.
   document.querySelectorAll('[data-sort-indicator]').forEach((el) => {
     el.textContent = '';
-    el.closest('th')?.setAttribute('aria-sort', 'none');
+    el.closest('[role="columnheader"]')?.setAttribute('aria-sort', 'none');
   });
   if (state.sortColumn) {
     const indicator = document.querySelector(`[data-sort-indicator="${state.sortColumn}"]`);
     if (indicator) {
       indicator.textContent = state.sortDirection === 'asc' ? ' \u25B2' : ' \u25BC';
       indicator
-        .closest('th')
+        .closest('[role="columnheader"]')
         ?.setAttribute(
           'aria-sort',
           state.sortDirection === 'asc' ? 'ascending' : 'descending',
@@ -208,28 +210,17 @@ export function renderResultsTable(payload: ResultsPayload) {
     }
   }
 
-  // For CI-bar scaling: find the widest CI span in the whole payload.
-  let maxCIWidth = 1;
-  for (const row of payload.rows) {
-    if (row.rankLow && row.rankHigh) {
-      const w = row.rankHigh - row.rankLow + 1;
-      if (w > maxCIWidth) maxCIWidth = w;
-    }
-  }
-
   sortedRows.forEach((row) => {
-    const tr = document.createElement('tr');
-    tr.dataset.index = row.index.toString();
-    let isUncertain = false;
+    const rowEl = document.createElement('div');
+    rowEl.className = 'rank-row';
+    rowEl.setAttribute('role', 'row');
+    rowEl.dataset.index = row.index.toString();
     if (analysisReady && state.wasm && widthTarget != null) {
       const width = state.wasm.get_uncertainty_width_for(row.index);
       if (width > widthTarget) {
-        tr.classList.add('is-uncertain');
-        isUncertain = true;
-        // The results subhead promises this; without it the amber stripe is
-        // decoration.
-        tr.title = 'Compare this title next';
-        tr.addEventListener('click', (event) => {
+        // The amber bar says the row is unsettled; this makes it actionable.
+        rowEl.title = 'Compare this title next';
+        rowEl.addEventListener('click', (event) => {
           if (event.target instanceof HTMLElement && event.target.closest('input')) {
             return;
           }
@@ -238,8 +229,8 @@ export function renderResultsTable(payload: ResultsPayload) {
       }
     }
 
-    const selectCell = document.createElement('td');
-    selectCell.className = 'col-check';
+    const selectCell = document.createElement('span');
+    selectCell.setAttribute('role', 'cell');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = state.selectedIndices.has(row.index);
@@ -253,141 +244,89 @@ export function renderResultsTable(payload: ResultsPayload) {
     });
     selectCell.appendChild(checkbox);
 
-    const rankCell = document.createElement('td');
-    rankCell.className = 'col-rank';
-    const rankNum = document.createElement('span');
-    rankNum.className = 'rank-num';
-    rankNum.textContent = row.rank.toString();
-    rankCell.appendChild(rankNum);
+    const ordinalCell = document.createElement('span');
+    ordinalCell.className = 'rank-ordinal';
+    ordinalCell.setAttribute('role', 'cell');
+    ordinalCell.textContent = row.rank.toString();
 
-    const titleCell = document.createElement('td');
-    titleCell.className = 'col-title';
-    titleCell.textContent = row.title;
-
-    const originalCell = document.createElement('td');
-    originalCell.className = 'col-score';
-    originalCell.textContent =
-      row.originalScore > 0
-        ? formatScore(row.originalScore, config)
-        : '—';
-
-    // New score + delta
-    const newCell = document.createElement('td');
-    newCell.className = 'col-score';
-    if (row.newScore > 0) {
-      const scoreSpan = document.createElement('span');
-      scoreSpan.textContent = formatScore(row.newScore, config);
-      newCell.appendChild(scoreSpan);
-      if (row.originalScore > 0) {
-        const delta = row.newScore - row.originalScore;
-        const deltaSpan = document.createElement('span');
-        deltaSpan.className =
-          'score-delta ' +
-          (delta > 0.001 ? 'is-up' : delta < -0.001 ? 'is-down' : 'is-flat');
-        const arrow = delta > 0.001 ? '▲' : delta < -0.001 ? '▼' : '·';
-        const formattedDelta = formatScore(Math.abs(delta), config);
-        const sign = delta > 0.001 ? '+' : delta < -0.001 ? '-' : '';
-        deltaSpan.textContent = ` ${arrow}${sign}${formattedDelta}`;
-        newCell.appendChild(deltaSpan);
-      }
-    } else {
-      newCell.textContent = '—';
+    const titleCell = document.createElement('span');
+    titleCell.className = 'rank-title-cell';
+    titleCell.setAttribute('role', 'cell');
+    const titleText = document.createElement('span');
+    titleText.className = 'rank-title';
+    titleText.textContent = row.title;
+    titleCell.appendChild(titleText);
+    if (row.originalScore > 0) {
+      const delta = row.newScore - row.originalScore;
+      const deltaEl = document.createElement('span');
+      deltaEl.className =
+        'rank-delta ' +
+        (delta > 0.001 ? 'is-up' : delta < -0.001 ? 'is-down' : 'is-flat');
+      // U+2212, not a hyphen: at 12px a hyphen reads as a separator. The
+      // colour carries the direction, so there is no arrow glyph either.
+      const sign = delta > 0.001 ? '+' : delta < -0.001 ? '\u2212' : '';
+      deltaEl.textContent = `${sign}${formatScore(Math.abs(delta), config)}`;
+      titleCell.appendChild(deltaEl);
     }
 
-    // CI cell — range label + bar viz
-    const ciCell = document.createElement('td');
-    ciCell.className = 'col-ci';
+    let axisCell: HTMLSpanElement;
     if (row.rankLow && row.rankHigh) {
-      const range = document.createElement('span');
-      range.className = 'ci-range';
-      range.textContent = `[${row.rankLow} – ${row.rankHigh}]`;
+      axisCell = document.createElement('span');
+      axisCell.className = 'rank-axis';
+      const base = document.createElement('span');
+      base.className = 'rank-axis-base';
+      const span = row.rankHigh - row.rankLow + 1;
+      const left = ((row.rankLow - 1) / total) * 100;
       const bar = document.createElement('span');
-      bar.className = 'ci-bar';
-      const fill = document.createElement('span');
-      fill.className = 'ci-bar-fill';
-      const widthPct = Math.max(
-        4,
-        ((row.rankHigh - row.rankLow + 1) / maxCIWidth) * 100,
-      );
-      fill.style.width = `${widthPct}%`;
-      bar.appendChild(fill);
-      ciCell.append(range, bar);
-      if (isUncertain) {
-        const mark = document.createElement('span');
-        mark.className = 'ci-uncertain-mark';
-        mark.title = 'High uncertainty';
-        mark.textContent = '▓▓';
-        ciCell.appendChild(mark);
-      }
-    } else {
-      ciCell.textContent = '—';
-    }
-
-    // Top-K cell — percentage + mini bar
-    const topKCell = document.createElement('td');
-    topKCell.className = 'col-topk';
-    if (row.topKConfidence != null) {
-      const pct = Math.round(row.topKConfidence * 100);
+      bar.className = span >= 3 ? 'rank-axis-bar is-wide' : 'rank-axis-bar';
+      bar.style.left = `${left}%`;
+      bar.style.width = `${(span / total) * 100}%`;
       const label = document.createElement('span');
-      label.className = 'topk-label';
-      label.textContent = `${pct}%`;
-      const bar = document.createElement('span');
-      bar.className = 'topk-bar';
-      const fill = document.createElement('span');
-      fill.className = 'topk-bar-fill';
-      fill.style.width = `${pct}%`;
-      bar.appendChild(fill);
-      topKCell.append(label, bar);
+      label.className = 'rank-axis-label';
+      label.style.left = `${left}%`;
+      label.textContent = `${row.rankLow}\u2013${row.rankHigh}`;
+      axisCell.append(base, bar, label);
     } else {
-      topKCell.textContent = '—';
+      axisCell = document.createElement('span');
+      axisCell.className = 'rank-axis-empty';
+      axisCell.textContent = '—';
     }
+    axisCell.setAttribute('role', 'cell');
 
-    tr.append(
-      selectCell,
-      rankCell,
-      titleCell,
-      originalCell,
-      newCell,
-      ciCell,
-      topKCell,
-    );
-    dom.rankingsBody!.appendChild(tr);
+    const scoreCell = document.createElement('span');
+    scoreCell.className = 'rank-score';
+    scoreCell.setAttribute('role', 'cell');
+    scoreCell.textContent =
+      row.newScore > 0 ? formatScore(row.newScore, config) : '—';
+
+    rowEl.append(selectCell, ordinalCell, titleCell, axisCell, scoreCell);
+    dom.rankingsBody!.appendChild(rowEl);
   });
   updateSelectionStatus(payload.rows.length);
-  updateResultsHeadline(payload);
+  updateResultsHeadline();
 }
 
-function updateResultsHeadline(payload: ResultsPayload) {
+function updateResultsHeadline() {
   if (!dom.resultsHeadline) return;
-  const count = payload.rows.length;
-  if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
-    dom.resultsHeadline.textContent = `Moonsorter ordered ${count} titles.`;
-    return;
-  }
-  const topKSize = payload.analysis.topK;
-  const topKThreshold = 0.8;
-  const topKStable = state.wasm.get_topk_stable_count(topKThreshold);
-  const topKRows = Math.min(topKSize, count);
-  const pct = topKRows > 0 ? (topKStable / topKRows) * 100 : 0;
-  const stable = pct >= 80;
-  const qualifier = stable ? 'stable' : 'not stable';
-  dom.resultsHeadline.innerHTML =
-    `Moonsorter ordered ${count} titles. ` +
-    `The top ranks are <em>${qualifier}</em> at ${pct.toFixed(1)}%.`;
+  // The stability qualifier that used to live here is now the Top-K lock-in
+  // stat in the sidebar; repeating it turned the 34px headline into a
+  // paragraph.
+  const count = state.comparisons.length;
+  dom.resultsHeadline.textContent = `Ranking after ${count} ${
+    count === 1 ? 'comparison' : 'comparisons'
+  }`;
 }
 
 export function renderAnalysisSummary(payload: ResultsPayload) {
-  if (!dom.analysisSummary) return;
+  const stats = [dom.statMedian, dom.statTopK, dom.statSamples, dom.statPairs];
   if (!payload.analysis || !state.wasm || !state.wasm.get_uncertainty_ready()) {
-    dom.analysisSummary.classList.add('hidden');
-    dom.uncertainCard?.classList.add('hidden');
-    dom.analysisControlsCard?.classList.remove('hidden');
-    if (dom.analysisUncertainList) {
-      dom.analysisUncertainList.innerHTML = '';
+    for (const stat of stats) {
+      if (stat) stat.textContent = '—';
     }
+    dom.uncertainCallout?.classList.add('hidden');
+    if (dom.uncertainChips) dom.uncertainChips.innerHTML = '';
     return;
   }
-  dom.analysisControlsCard?.classList.add('hidden');
   const medianWidth = state.wasm.get_uncertainty_median_width();
   const p90Width = state.wasm.get_uncertainty_p90_width();
   const widthTarget = state.wasm.get_uncertainty_width_target();
@@ -400,60 +339,53 @@ export function renderAnalysisSummary(payload: ResultsPayload) {
     medianWidth <= widthTarget && topKStable >= topKTarget && topKRows > 0;
   const groupOnly = state.rankMode === 'group' && state.rankPhase === 'group';
 
-  if (dom.analysisEyebrow) {
-    dom.analysisEyebrow.textContent = `Bootstrap · ${payload.analysis.samples} resamples`;
+  if (dom.statMedian) {
+    dom.statMedian.innerHTML = `${medianWidth} <span class="stat-unit">ranks · p90 ${p90Width}</span>`;
   }
-  if (dom.analysisMedian) {
-    dom.analysisMedian.innerHTML = `${medianWidth} <span class="stat-unit">ranks · p90 ${p90Width}</span>`;
-  }
-  if (dom.analysisTopKSummary) {
+  if (dom.statTopK) {
     const pct = topKRows > 0 ? (topKStable / topKRows) * 100 : 0;
-    dom.analysisTopKSummary.innerHTML = `${pct.toFixed(1)}<span class="stat-unit">%</span>`;
+    dom.statTopK.innerHTML = `${pct.toFixed(1)}<span class="stat-unit">%</span>`;
   }
-  if (dom.statIters) {
-    dom.statIters.innerHTML = `${payload.analysis.maxIter}<span class="stat-unit">/sample</span>`;
+  if (dom.statSamples) {
+    dom.statSamples.textContent = payload.analysis.samples.toString();
   }
   if (dom.statPairs) {
     dom.statPairs.textContent = state.comparisons.length.toString();
   }
-  if (dom.analysisRecommendation) {
+  if (dom.uncertainBody) {
     if (groupOnly) {
-      dom.analysisRecommendation.textContent = stable
+      dom.uncertainBody.textContent = stable
         ? 'The ranking is stable. If a group looks incorrect, do more group sorts.'
         : 'The ranking needs more data. Do more group sorts to make the confidence intervals smaller.';
     } else {
-      dom.analysisRecommendation.textContent = stable
+      dom.uncertainBody.textContent = stable
         ? 'The ranking is stable. If a title looks incorrect, click it below to compare it again.'
         : 'The ranking needs more comparisons. Click a title below to compare it with its nearest neighbor.';
     }
   }
-  if (dom.analysisUncertainList) {
-    dom.analysisUncertainList.innerHTML = '';
-    if (groupOnly) {
-      dom.analysisUncertainList.textContent =
-        'Group mode: do more group sorts to make the confidence intervals smaller.';
-      dom.analysisSummary.classList.remove('hidden');
-      dom.uncertainCard?.classList.remove('hidden');
-      return;
-    }
-    const rowByIndex = new Map(payload.rows.map((row) => [row.index, row]));
-    const limit = Math.min(6, payload.rows.length);
-    for (let i = 0; i < limit; i += 1) {
-      const idx = state.wasm.get_uncertainty_order_index(i);
-      if (idx < 0) break;
-      const row = rowByIndex.get(idx);
-      if (!row) continue;
-      const width = state.wasm.get_uncertainty_width_for(idx);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'analysis-chip';
-      button.textContent = `#${row.rank} ${row.title} (CI ${width})`;
-      button.addEventListener('click', () => focusComparisonFor(row, payload.rows));
-      dom.analysisUncertainList.appendChild(button);
+  if (dom.uncertainChips) {
+    dom.uncertainChips.innerHTML = '';
+    // Group mode has no pair queue to seed, so the callout body is the whole
+    // advice; chips would point at comparisons the user cannot answer yet.
+    if (!groupOnly) {
+      const rowByIndex = new Map(payload.rows.map((row) => [row.index, row]));
+      const limit = Math.min(6, payload.rows.length);
+      for (let i = 0; i < limit; i += 1) {
+        const idx = state.wasm.get_uncertainty_order_index(i);
+        if (idx < 0) break;
+        const row = rowByIndex.get(idx);
+        if (!row) continue;
+        const width = state.wasm.get_uncertainty_width_for(idx);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'analysis-chip';
+        button.textContent = `#${row.rank} ${row.title} (CI ${width})`;
+        button.addEventListener('click', () => focusComparisonFor(row, payload.rows));
+        dom.uncertainChips.appendChild(button);
+      }
     }
   }
-  dom.analysisSummary.classList.remove('hidden');
-  dom.uncertainCard?.classList.remove('hidden');
+  dom.uncertainCallout?.classList.remove('hidden');
 }
 
 // Forward declaration for tier list rendering
@@ -480,5 +412,5 @@ export function showResults() {
     }
   }
 
-  showStep('results');
+  showView('results');
 }

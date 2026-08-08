@@ -96,8 +96,8 @@ export function loadSessionFile(text: string): SavedState | null {
 
 /**
  * Maps a restored session onto the ranker's start arguments. `SavedState` and
- * `StartOptions` are deliberately different shapes (`items` vs `list`, and
- * `optInTierList` is UI-only), so the translation lives in one place.
+ * `StartOptions` are deliberately different shapes (`items` vs `list`), so the
+ * translation lives in one place.
  */
 export function sessionStartOptions(saved: SavedState): StartOptions {
   return {
@@ -123,7 +123,7 @@ export function sessionStartOptions(saved: SavedState): StartOptions {
 
 export function downloadResults() {
   if (!state.lastResults) {
-    setStatus(dom.importStatus, 'There are no results to export.');
+    setStatus(dom.listStatus, 'There are no results to export.');
     return;
   }
   const blob = new Blob([JSON.stringify(state.lastResults, null, 2)], {
@@ -141,7 +141,7 @@ export function downloadResults() {
 
 export function downloadCsv() {
   if (!state.lastResults) {
-    setStatus(dom.importStatus, 'There are no results to export.');
+    setStatus(dom.listStatus, 'There are no results to export.');
     return;
   }
   const lines = [

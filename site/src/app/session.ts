@@ -1,20 +1,21 @@
-import { getToken } from '../lib/auth';
 import { setStatus } from '../lib/utils';
 import { dom } from './dom';
 import { state, resetState } from './state';
 import { loadState, clearStoredState } from './storage';
-import { showStep } from './steps';
+import { showView } from './views';
 import { openModal } from './modal';
 import { updateProgress } from './progress';
+import { updateListView } from './list';
 import { startRanking } from './ranking';
 
 export function resumeSession(): boolean {
   const saved = loadState();
   if (!saved) {
-    setStatus(dom.sessionStatus, 'There is no saved session.');
+    setStatus(dom.listStatus, 'There is no saved session.');
     return false;
   }
   state.pendingStart = null;
+  state.listSource = 'saved session';
 
   if (dom.includeUnscored) dom.includeUnscored.checked = saved.includeUnscored;
   if (dom.preserveRange) dom.preserveRange.checked = saved.preserveRange;
@@ -52,15 +53,13 @@ export function resumeSession(): boolean {
     rankPhase: saved.rankPhase,
     rankObjective: saved.rankObjective,
     modeChosen: resolvedModeChosen,
-  }).then(() => {
-    if (saved.optInTierList != null && dom.optInTierList) {
-      dom.optInTierList.checked = saved.optInTierList;
-    }
-    setStatus(dom.sessionStatus, 'Moonsorter resumed the session.');
   })
+    .then(() => {
+      setStatus(dom.listStatus, 'Moonsorter resumed the session.');
+    })
     .catch((error) => {
       setStatus(
-        dom.sessionStatus,
+        dom.listStatus,
         error instanceof Error ? error.message : 'The resume failed. Try again.',
       );
     });
@@ -79,9 +78,12 @@ export function performClearSession() {
   if (dom.analysisStatus) {
     dom.analysisStatus.textContent = '';
   }
-  setStatus(dom.sessionStatus, 'Moonsorter cleared the session.');
+  setStatus(dom.listStatus, 'Moonsorter cleared the session.');
   // resetState() drops the ranker, so the progress bar would otherwise keep
   // showing the cleared session's counts.
   updateProgress();
-  showStep(getToken() ? 'import' : 'connect');
+  // resetState() also emptied the list, so the headline, the count and the
+  // start button all still describe the session that just went away.
+  updateListView();
+  showView('list');
 }

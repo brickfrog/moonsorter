@@ -51,6 +51,8 @@ export type AppState = {
   modeChosen: boolean;
   pendingStart: StartOptions | null;
   importPath: 'anilist' | 'csv';
+  /** Human-readable provenance for the top-bar session label. */
+  listSource: string | null;
   earlyFinishWarned: boolean;
 };
 
@@ -90,6 +92,7 @@ export const state: AppState = {
   modeChosen: false,
   pendingStart: null,
   importPath: 'anilist',
+  listSource: null,
   earlyFinishWarned: false,
 };
 
@@ -104,6 +107,7 @@ export function resetState() {
   state.currentFilters = {};
   state.currentGroup = null;
   state.pendingStart = null;
+  state.listSource = null;
   state.rankGoal = 'rescore';
   state.rankMode = 'pairwise';
   state.rankPhase = 'pairwise';

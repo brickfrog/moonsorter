@@ -1,15 +1,15 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="AniList authorization">
-  <section class="card">
-    <div class="pill">Connecting</div>
-    <h3 class="text-xl font-display">Moonsorter connects to AniList</h3>
-    <p class="text-sm text-latte-subtext1">
+<Layout title="AniList authorization" views={false}>
+  <section class="view list-main">
+    <span class="eyebrow mb-3">Connecting</span>
+    <h1 class="list-headline">Moonsorter connects to AniList</h1>
+    <p class="list-lede">
       Moonsorter completes the authorization. Then your browser goes back to the
       main page.
     </p>
-    <p class="text-xs text-latte-subtext0" data-auth-status></p>
+    <p class="status-slot" data-auth-status role="status" aria-live="polite"></p>
   </section>
 
   <script>

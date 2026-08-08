@@ -1,4 +1,4 @@
-import { setStatus } from '../lib/utils';
+import { formatEntryMeta, setStatus } from '../lib/utils';
 import { dom } from './dom';
 import { state } from './state';
 import { saveState } from './storage';
@@ -8,75 +8,51 @@ import { applyHistoryEntry } from './wasm';
 type Side = 'A' | 'B';
 
 function paintSide(side: Side, item: typeof state.items[number] | undefined) {
+  const title = document.querySelector(`[data-choice-title="${side}"]`);
   const meta = document.querySelector(`[data-choice-meta="${side}"]`);
-  const seed = document.querySelector(`[data-choice-seed="${side}"]`);
   const cover = document.querySelector<HTMLImageElement>(
     `[data-choice-cover="${side}"]`,
   );
-  const posterLabel = document.querySelector(
-    `[data-choice-poster="${side}"] .compare-card-poster-label`,
-  );
-  const titleLabel = document.querySelector(`[data-choice-title-label="${side}"]`);
+  const fallback = document.querySelector(`[data-choice-fallback="${side}"]`);
 
-  if (meta) {
-    if (item) {
-      const year =
-        item.airedYear || item.seasonYear || item.startedAtYear;
-      meta.textContent = year ? `${year}` : '';
-      meta.classList.toggle('hidden', !year);
-    } else {
-      meta.textContent = '';
-      meta.classList.add('hidden');
-    }
-  }
+  if (title) title.textContent = item?.title ?? 'Unknown';
+  if (meta) meta.textContent = item ? formatEntryMeta(item) : '';
 
-  if (seed) {
-    if (item && item.score > 0) {
-      seed.innerHTML = `<span class="seed-label">seed</span> <span class="seed-value">${item.score}</span>`;
-      seed.classList.remove('hidden');
-    } else {
-      seed.innerHTML = '';
-      seed.classList.add('hidden');
-    }
-  }
+  // The seed score badge used to sit here. It is gone deliberately: showing the
+  // prior score during a forced choice biases the answer, and the model then
+  // reads that bias back as fresh evidence.
 
-  if (cover) {
-    const src = item?.coverImage;
-    if (src) {
-      cover.src = src;
-      cover.classList.remove('hidden');
-      if (posterLabel) posterLabel.classList.add('hidden');
-    } else {
-      cover.removeAttribute('src');
+  if (!cover) return;
+  // `coverArt` is the extraLarge asset. `coverImage` is a 100px thumbnail and
+  // belongs to the tier-list export only; it is unusable at poster size.
+  const src = item?.coverArt;
+  if (src) {
+    cover.onerror = () => {
       cover.classList.add('hidden');
-      if (posterLabel) posterLabel.classList.remove('hidden');
-    }
-  }
-
-  if (titleLabel && item) {
-    titleLabel.textContent = item.title;
-  }
-}
-
-function updatePairMetadata(leftIndex: number, rightIndex: number) {
-  paintSide('A', state.items[leftIndex]);
-  paintSide('B', state.items[rightIndex]);
-}
-
-function updatePairStrategyBadge() {
-  const badge = dom.pairStrategyBadge;
-  if (!badge) return;
-
-  // Epsilon controls exploration: high = random, low = focused
-  if (state.explorationEpsilon >= 0.25) {
-    badge.textContent = '\uD83C\uDFB2 Random sampling';
-    badge.classList.remove('hidden');
-  } else if (state.explorationEpsilon >= 0.1) {
-    badge.textContent = '\uD83D\uDCCA Balanced sampling';
-    badge.classList.remove('hidden');
+      fallback?.classList.remove('hidden');
+    };
+    cover.src = src;
+    cover.classList.remove('hidden');
+    fallback?.classList.add('hidden');
   } else {
-    badge.textContent = '\uD83C\uDFAF Uncertainty sampling';
-    badge.classList.remove('hidden');
+    cover.onerror = null;
+    cover.removeAttribute('src');
+    cover.classList.add('hidden');
+    fallback?.classList.remove('hidden');
+  }
+}
+
+function paintPair(leftIndex: number, rightIndex: number) {
+  const left = state.items[leftIndex];
+  const right = state.items[rightIndex];
+  paintSide('A', left);
+  paintSide('B', right);
+
+  // Cover art is decided per pair, never per panel. An asymmetric pair would
+  // make one option visually richer and bias a forced choice, corrupting the
+  // data the Plackett-Luce model fits, so one missing poster drops both.
+  if (dom.arena) {
+    dom.arena.dataset.art = left?.coverArt && right?.coverArt ? 'art' : 'text';
   }
 }
 
@@ -89,7 +65,6 @@ export function setShowResultsCallback(fn: () => void) {
 
 export function renderPair() {
   if (!state.wasm || !dom.leftTitle || !dom.rightTitle) return;
-  updatePairStrategyBadge();
 
   if (state.focusPair) {
     const [leftIndex, rightIndex] = state.focusPair;
@@ -102,9 +77,7 @@ export function renderPair() {
       leftIndex !== rightIndex
     ) {
       state.currentPair = [leftIndex, rightIndex];
-      dom.leftTitle.textContent = state.items[leftIndex]?.title ?? 'Unknown';
-      dom.rightTitle.textContent = state.items[rightIndex]?.title ?? 'Unknown';
-      updatePairMetadata(leftIndex, rightIndex);
+      paintPair(leftIndex, rightIndex);
       return;
     }
   }
@@ -123,9 +96,7 @@ export function renderPair() {
     return;
   }
   state.currentPair = [leftIndex, rightIndex];
-  dom.leftTitle.textContent = state.items[leftIndex]?.title ?? 'Unknown';
-  dom.rightTitle.textContent = state.items[rightIndex]?.title ?? 'Unknown';
-  updatePairMetadata(leftIndex, rightIndex);
+  paintPair(leftIndex, rightIndex);
 }
 
 export function handleChoice(result: number) {
@@ -149,7 +120,7 @@ export function handleChoice(result: number) {
   // still costing one comparison and one undo step.
   const ok = state.wasm.add_comparison(left, right, result);
   if (!ok) {
-    setStatus(dom.importStatus, 'Moonsorter did not record the comparison. Make the comparison again.');
+    setStatus(dom.listStatus, 'Moonsorter did not record the comparison. Make the comparison again.');
     return;
   }
   state.comparisons.push(
@@ -165,12 +136,12 @@ export function handleChoice(result: number) {
 export function undoLast() {
   if (!state.wasm) return;
   if (state.comparisons.length === 0) {
-    setStatus(dom.importStatus, 'There are no comparisons to undo.');
+    setStatus(dom.listStatus, 'There are no comparisons to undo.');
     return;
   }
   const ok = state.wasm.undo_last();
   if (!ok) {
-    setStatus(dom.importStatus, 'The undo operation failed. Try again.');
+    setStatus(dom.listStatus, 'The undo operation failed. Try again.');
     return;
   }
   const undone = state.comparisons.pop();
@@ -186,7 +157,7 @@ export function undoLast() {
 export function redoLast() {
   if (!state.wasm) return;
   if (state.redoStack.length === 0) {
-    setStatus(dom.importStatus, 'There are no comparisons to redo.');
+    setStatus(dom.listStatus, 'There are no comparisons to redo.');
     return;
   }
   const toRedo = state.redoStack.pop();
@@ -194,7 +165,7 @@ export function redoLast() {
 
   const ok = applyHistoryEntry(state.wasm, toRedo);
   if (!ok) {
-    setStatus(dom.importStatus, 'The redo operation failed. Try again.');
+    setStatus(dom.listStatus, 'The redo operation failed. Try again.');
     state.redoStack.push(toRedo); // put it back
     return;
   }

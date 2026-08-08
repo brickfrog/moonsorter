@@ -4,7 +4,7 @@ import { state } from './state';
 import { saveState } from './storage';
 import { updateProgress, updateGroupCoverage } from './progress';
 import { applyRanking } from './wasm';
-import { showStep } from './steps';
+import { showView } from './views';
 import { renderPair } from './comparison';
 
 export function buildRandomGroup(size: number): number[] {
@@ -21,8 +21,8 @@ export function updateModeUI() {
   const showSwitch =
     state.rankMode === 'group-pairwise' && state.rankPhase === 'group';
   dom.switchToPairwise.classList.toggle('hidden', !showSwitch);
-  if (dom.analysisResumeButton) {
-    dom.analysisResumeButton.textContent =
+  if (dom.resumeButton) {
+    dom.resumeButton.textContent =
       state.rankMode === 'pairwise' || state.rankPhase === 'pairwise'
         ? 'Continue the comparisons'
         : 'Continue the group sorts';
@@ -49,10 +49,7 @@ function moveSortItem(container: Element, item: HTMLElement, delta: number) {
   item.focus();
 
   const title = item.querySelector('.item-title')?.textContent ?? 'Title';
-  setStatus(
-    document.querySelector('[data-sort-group-live]'),
-    `${title} moved to position ${to + 1} of ${items.length}.`,
-  );
+  setStatus(dom.sortLive, `${title} moved to position ${to + 1} of ${items.length}.`);
 }
 
 function handleSortKeydown(container: Element, event: KeyboardEvent) {
@@ -146,7 +143,7 @@ export function startGroupSort() {
   state.currentGroup = buildRandomGroup(size);
   updateGroupCoverage();
   updateModeUI();
-  showStep('sortGroup');
+  showView('sort');
   renderSortGroup();
 }
 
@@ -162,7 +159,9 @@ export function submitSort() {
 
   const ok = applyRanking(state.wasm, orderedIndices);
   if (!ok) {
-    setStatus(dom.importStatus, 'Moonsorter did not record the group sort. Do the group sort again.');
+    // `dom.listStatus` lives in the List view, which is hidden while sorting —
+    // the announcer is the only slot the user can perceive from this screen.
+    setStatus(dom.sortLive, 'Moonsorter did not record the group sort. Do the group sort again.');
     return;
   }
 
@@ -174,7 +173,7 @@ export function submitSort() {
     startGroupSort();
     return;
   }
-  showStep('compare');
+  showView('compare');
   renderPair();
 }
 
@@ -184,6 +183,6 @@ export function skipSort() {
     startGroupSort();
     return;
   }
-  showStep('compare');
+  showView('compare');
   renderPair();
 }

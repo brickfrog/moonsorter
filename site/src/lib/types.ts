@@ -9,7 +9,18 @@ export type Entry = {
   startedAtYear?: number;
   completedAtYear?: number;
   updatedAtYear?: number;
+  /** Thumbnail (AniList `medium`), sized for the tier-list export grid. */
   coverImage?: string;
+  /**
+   * Full-size key art (AniList `extraLarge`) for the Compare panels. Kept
+   * separate from `coverImage`: a 100×157 thumbnail blown up to a 600px-tall
+   * poster is a blurry mess, and a 460×650 image per tier cell is wasteful.
+   */
+  coverArt?: string;
+  /** AniList media format, e.g. `TV`, `MOVIE`, `MANGA`. */
+  format?: string;
+  episodes?: number;
+  chapters?: number;
 };
 
 /**
@@ -54,7 +65,6 @@ export type SavedState = {
   rankPhase?: RankPhase;
   rankObjective?: RankObjective;
   modeChosen?: boolean;
-  optInTierList?: boolean;
 };
 
 export type StartOptions = {
