@@ -68,6 +68,8 @@ pub struct HistoryEntry {
   iteration_count : Int
   completed_comparisons : Array[(String, String)]
 } derive(ToJson, @json.FromJson)
+pub fn HistoryEntry::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn HistoryEntry::to_json(Self) -> Json
 
 pub struct IndexedHistoryEntry {
   strengths : Array[Double]
@@ -161,6 +163,8 @@ pub(all) struct PlackettLuceState {
   events : Array[RankingEvent]
   iteration_count : Int
 } derive(ToJson, @json.FromJson)
+pub fn PlackettLuceState::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PlackettLuceState::to_json(Self) -> Json
 
 pub struct RankerState {
   items : Array[String]
@@ -170,15 +174,21 @@ pub struct RankerState {
   iteration_count : Int
   completed_comparisons : Array[(String, String)]
 } derive(ToJson, @json.FromJson)
+pub fn RankerState::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RankerState::to_json(Self) -> Json
 
 pub struct RankingEvent {
   items : Array[String]
 } derive(ToJson, @json.FromJson)
+pub fn RankingEvent::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RankingEvent::to_json(Self) -> Json
 
 pub struct SaveState {
   state : RankerState
   history : Array[HistoryEntry]
 } derive(ToJson, @json.FromJson)
+pub fn SaveState::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn SaveState::to_json(Self) -> Json
 
 // Type aliases
 
