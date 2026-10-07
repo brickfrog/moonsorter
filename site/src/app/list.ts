@@ -3,75 +3,17 @@ import { estimateTotalComparisons } from '../lib/utils';
 import { dom } from './dom';
 import { state } from './state';
 
-const ONES = [
-  'zero',
-  'one',
-  'two',
-  'three',
-  'four',
-  'five',
-  'six',
-  'seven',
-  'eight',
-  'nine',
-  'ten',
-  'eleven',
-  'twelve',
-  'thirteen',
-  'fourteen',
-  'fifteen',
-  'sixteen',
-  'seventeen',
-  'eighteen',
-  'nineteen',
-];
-
-// Indexed by the tens digit, so the two unused leading slots are deliberate.
-const TENS = [
-  '',
-  '',
-  'twenty',
-  'thirty',
-  'forty',
-  'fifty',
-  'sixty',
-  'seventy',
-  'eighty',
-  'ninety',
-];
-
 /**
- * Spelled-out counts read as prose at the head of a headline sentence; past
- * ninety-nine the word form is longer than the clause it sits in, so digits
- * win. Both counts open a sentence, so the capital belongs to the word form
- * rather than to the table.
- */
-function headlineNumber(value: number): string {
-  if (value > 99) return String(value);
-  const tens = TENS[Math.floor(value / 10)];
-  const ones = value % 10;
-  const word =
-    value < 20 ? ONES[value] : ones === 0 ? tens : `${tens}-${ONES[ones]}`;
-  return word.charAt(0).toUpperCase() + word.slice(1);
-}
-
-/**
- * Below two titles there is no pair to ask about, so the headline drops the
- * numbers rather than promising "one question". At two or more both counts
- * are plural, which is why neither noun is inflected here.
+ * Below two titles there is no pair to compare, so there is no estimate to
+ * show.
  */
 function headline(count: number): string {
-  if (count < 2) {
-    return "Your titles. A handful of questions. One ranking you'll actually stand behind.";
-  }
+  if (count < 2) return 'Rank a list by pairwise comparison';
   // Must be the ranker's own estimate, not an independent n·log(n): the
   // Compare strip counts towards `get_progress_estimated`, and a headline
   // promising a different total makes one session advertise two targets.
   const questions = estimateTotalComparisons(count);
-  return (
-    `${headlineNumber(count)} titles. ${headlineNumber(questions)} questions. ` +
-    "One ranking you'll actually stand behind."
-  );
+  return `${count} titles · ~${questions} comparisons`;
 }
 
 function listRow(entry: Entry, index: number): HTMLElement {
