@@ -62,22 +62,76 @@ export function normalizeSavedState(parsed: SavedState): SavedState {
 }
 
 export function saveState() {
-  localStorage.setItem(STATE_KEY, JSON.stringify(buildSavedState()));
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify(buildSavedState()));
+  } catch (error) {
+    // Persistence is best-effort: callers must still update the comparison UI
+    // and retain the current ranking (which can be downloaded as a session).
+    console.warn('[rank] could not save session; ranking remains in memory', error);
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isHistory(value: unknown, itemCount: number): boolean {
+  return Array.isArray(value) && value.every((entry) => {
+    if (!isRecord(entry) || !Array.isArray(entry.indices)) return false;
+    const indices = entry.indices;
+    return indices.length >= 2 &&
+      indices.every((index) => Number.isInteger(index) && index >= 0 && index < itemCount) &&
+      new Set(indices).size === indices.length &&
+      (entry.tie === undefined || typeof entry.tie === 'boolean') &&
+      (entry.tie !== true || indices.length === 2);
+  });
+}
+
+/** Validate before replay; never drop titles and shift recorded indices. */
+function isSavedState(value: unknown): value is SavedState {
+  if (!isRecord(value)) return false;
+  if (value.version !== undefined && value.version !== SESSION_VERSION) return false;
+  if (!Array.isArray(value.items) || !value.items.every((item) =>
+    isRecord(item) && typeof item.title === 'string' && item.title.trim().length > 0,
+  )) return false;
+  if (!isHistory(value.comparisons, value.items.length)) return false;
+  // Sessions predating score priors may omit this field.
+  if (value.priorComparisons !== undefined &&
+    !isHistory(value.priorComparisons, value.items.length)) return false;
+  for (const key of ['preserveRange', 'includeUnscored', 'useScorePrior', 'modeChosen']) {
+    if (value[key] !== undefined && typeof value[key] !== 'boolean') return false;
+  }
+  for (const key of ['scoreFormat', 'importMode']) {
+    if (value[key] !== undefined && typeof value[key] !== 'string') return false;
+  }
+  return true;
 }
 
 export function loadState(): SavedState | null {
-  const raw = localStorage.getItem(STATE_KEY);
-  if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as SavedState;
-    if (!parsed.items || !parsed.comparisons) return null;
-    return normalizeSavedState(parsed);
+    // Accessing localStorage itself can throw when browser policy blocks it.
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isSavedState(parsed)) return null;
+    return normalizeSavedState({
+      ...parsed,
+      priorComparisons: parsed.priorComparisons ?? [],
+      scoreFormat: parsed.scoreFormat ?? 'POINT_10',
+      preserveRange: parsed.preserveRange ?? true,
+      includeUnscored: parsed.includeUnscored ?? false,
+    });
   } catch (error) {
-    console.error('[rank] failed to parse saved state', error);
+    console.warn('[rank] could not read saved session', error);
     return null;
   }
 }
 
 export function clearStoredState() {
-  localStorage.removeItem(STATE_KEY);
+  try {
+    localStorage.removeItem(STATE_KEY);
+  } catch (error) {
+    // A blocked remove must not prevent Start over from resetting app state.
+    console.warn('[rank] could not remove saved session', error);
+  }
 }
